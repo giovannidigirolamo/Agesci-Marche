@@ -123,6 +123,13 @@ service cloud.firestore {
         allow create, update, delete: if isSuperAdmin();
       }
 
+      // Calendario Eventi Regionali e di Zona
+      match /eventi_calendario/{document} {
+        allow read: if true;
+        allow create: if request.auth != null;
+        allow update, delete: if isAdminOrSuper() || (request.auth != null && resource.data.authorEmail == request.auth.token.email);
+      }
+
       match /settings/{document} {
         allow read: if true;
         allow write: if isSuperAdmin();
