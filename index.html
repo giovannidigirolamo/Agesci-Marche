@@ -106,7 +106,7 @@
                     <i class="fa-solid fa-compass"></i> Attività & Settori
                 </button>
                 <button v-if="canAccessModule('eventi')" @click="currentModule = 'eventi'" :class="{'bg-agesci-purple text-white shadow': currentModule === 'eventi', 'text-gray-300 hover:bg-agesci-purple/40': currentModule !== 'eventi'}" class="px-3 py-2 rounded-xl transition flex items-center gap-2">
-                    <i class="fa-solid fa-calendar-days"></i> Eventi Regionali <span class="text-[9px] bg-agesci-yellow text-agesci-dark px-1.5 py-0.5 rounded-full font-bold">Aggiornamento</span>
+                    <i class="fa-solid fa-calendar-days"></i> Calendario
                 </button>
                 <button v-if="canAccessModule('bilanci')" @click="currentModule = 'bilanci'" :class="{'bg-agesci-purple text-white shadow': currentModule === 'bilanci', 'text-gray-300 hover:bg-agesci-purple/40': currentModule !== 'bilanci'}" class="px-3 py-2 rounded-xl transition flex items-center gap-2">
                     <i class="fa-solid fa-wallet"></i> Bilanci Eventi
@@ -201,9 +201,9 @@
                     </button>
                     <button v-if="canAccessModule('eventi')" @click="currentModule = 'eventi'" class="bg-white border rounded-2xl p-5 md:p-6 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 transition space-y-2">
                         <i class="fa-solid fa-calendar-days text-2xl md:text-3xl text-agesci-purple"></i>
-                        <h3 class="font-bold text-sm md:text-base text-agesci-dark">Eventi Regionali</h3>
+                        <h3 class="font-bold text-sm md:text-base text-agesci-dark">Calendario</h3>
                         <p v-if="etichettaVisibilita('eventi')" class="text-[10px] font-bold text-amber-600"><i class="fa-solid fa-eye-slash mr-1"></i>{{ etichettaVisibilita('eventi') }}</p>
-                        <p class="text-[11px] md:text-xs text-gray-500"> IN AGGIORNAMENTO; Area utilità per eventi regionali.</p>
+                        <p class="text-[11px] md:text-xs text-gray-500">Eventi regionali, di zona e di gruppo con promemoria e import nel calendario personale.</p>
                     </button>
                     <button v-if="canAccessModule('bilanci')" @click="currentModule = 'bilanci'" class="bg-white border rounded-2xl p-5 md:p-6 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 transition space-y-2">
                         <i class="fa-solid fa-wallet text-2xl md:text-3xl text-agesci-purple"></i>
@@ -1245,16 +1245,461 @@
             </div>
         </div>
 
-        <!-- MODULO 3: EVENTI REGIONALI -->
-        <div v-show="currentModule === 'eventi' && canAccessModule('eventi')" class="absolute inset-0 flex items-center justify-center p-6 bg-gray-50 text-center">
-            <div class="max-w-md bg-white rounded-3xl p-8 border shadow-sm space-y-4">
-                <div class="w-16 h-16 bg-agesci-yellow/20 text-agesci-dark rounded-full flex items-center justify-center text-2xl mx-auto font-bold">
-                    <i class="fa-solid fa-person-digging"></i>
+        <!-- MODULO 3: CALENDARIO -->
+        <div v-show="currentModule === 'eventi' && canAccessModule('eventi')" class="absolute inset-0 flex flex-col bg-gray-50">
+
+            <!-- BARRA STRUMENTI CALENDARIO -->
+            <div class="bg-white border-b px-3 md:px-4 py-2 flex flex-wrap items-center justify-between gap-2 z-20 shrink-0 shadow-sm">
+                <div class="flex items-center gap-1.5 min-w-0">
+                    <button @click="calendarioOggi" class="border rounded-lg px-2.5 py-1.5 text-xs font-bold hover:bg-gray-50 transition">Oggi</button>
+                    <button @click="calendarioSposta(-1)" class="w-8 h-8 rounded-lg border flex items-center justify-center text-gray-600 hover:bg-gray-50 transition" title="Periodo precedente">
+                        <i class="fa-solid fa-chevron-left text-xs"></i>
+                    </button>
+                    <button @click="calendarioSposta(1)" class="w-8 h-8 rounded-lg border flex items-center justify-center text-gray-600 hover:bg-gray-50 transition" title="Periodo successivo">
+                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </button>
+                    <h2 class="font-bold text-sm md:text-lg text-agesci-dark capitalize truncate ml-1">{{ calendarioTitolo }}</h2>
                 </div>
-                <h2 class="text-xl font-bold text-agesci-dark">Modulo Eventi Regionali</h2>
-                <p class="text-sm text-gray-500">Questa sezione è attualmente <b>in aggiornamento</b>.</p>
+
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <div class="flex bg-gray-100 rounded-xl p-0.5 text-[11px] font-bold">
+                        <button @click="calendarioImpostaVista('giorno')" :class="calendarioSubView === 'giorno' ? 'bg-white shadow text-agesci-dark' : 'text-gray-500'" class="px-2.5 py-1.5 rounded-lg transition">Giorno</button>
+                        <button @click="calendarioImpostaVista('settimana')" :class="calendarioSubView === 'settimana' ? 'bg-white shadow text-agesci-dark' : 'text-gray-500'" class="px-2.5 py-1.5 rounded-lg transition">Settimana</button>
+                        <button @click="calendarioImpostaVista('mese')" :class="calendarioSubView === 'mese' ? 'bg-white shadow text-agesci-dark' : 'text-gray-500'" class="px-2.5 py-1.5 rounded-lg transition">Mese</button>
+                    </div>
+                    <button @click="calendarioFiltriPanel = !calendarioFiltriPanel" :class="calendarioFiltriPanel || calendarioFiltriAttiviCount ? 'bg-agesci-purple text-white border-agesci-purple' : 'bg-white text-gray-600 border-gray-200'" class="border rounded-xl px-2.5 py-1.5 text-[11px] font-bold flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-filter"></i> Filtri
+                        <span v-if="calendarioFiltriAttiviCount" class="bg-agesci-yellow text-agesci-dark text-[9px] rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">{{ calendarioFiltriAttiviCount }}</span>
+                    </button>
+                    <button @click="showCalendarImportModal = true" class="border rounded-xl px-2.5 py-1.5 text-[11px] font-bold text-agesci-purple border-purple-200 bg-purple-50 hover:bg-purple-100 transition flex items-center gap-1.5" title="Importa gli eventi nel tuo calendario personale">
+                        <i class="fa-solid fa-calendar-plus"></i> <span class="hidden sm:inline">Importa nel mio calendario</span>
+                    </button>
+                    <button v-if="currentUser" @click="openNewCalendarEvent()" class="bg-agesci-dark text-white rounded-xl px-3 py-1.5 text-[11px] font-bold shadow hover:bg-agesci-purple transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i> Nuovo evento
+                    </button>
+                    <button v-else @click="showAuthModal = true" class="bg-agesci-yellow text-agesci-dark rounded-xl px-3 py-1.5 text-[11px] font-bold shadow hover:bg-yellow-400 transition">
+                        Accedi per creare
+                    </button>
+                </div>
+            </div>
+
+            <!-- AVVISO NOTIFICHE -->
+            <div v-if="notificationPermission !== 'granted'" class="bg-amber-50 border-b border-amber-200 px-3 md:px-4 py-2 text-[11px] text-amber-900 flex flex-wrap items-center justify-between gap-2 shrink-0">
+                <span class="flex items-center gap-2">
+                    <i class="fa-solid fa-bell-slash text-amber-600"></i>
+                    <span v-if="notificationPermission === 'denied'">Le notifiche sono bloccate dal browser: i promemoria degli eventi non possono essere mostrati. Riattivale dalle impostazioni del sito.</span>
+                    <span v-else-if="notificationPermission === 'unsupported'">Questo browser non supporta le notifiche dell'app. I promemoria resteranno visibili solo come avviso nella pagina.</span>
+                    <span v-else>Vuoi ricevere i promemoria degli eventi? Attiva le notifiche dell'app: chi crea l'evento decide se e quanto tempo prima avvisare.</span>
+                </span>
+                <button v-if="notificationPermission === 'default'" @click="richiediPermessoNotifiche" class="bg-agesci-dark text-white px-3 py-1.5 rounded-lg font-bold shadow hover:bg-agesci-purple transition shrink-0">
+                    <i class="fa-solid fa-bell mr-1"></i> Attiva notifiche
+                </button>
+            </div>
+
+            <!-- PANNELLO FILTRI DI VISIBILITÀ -->
+            <div v-if="calendarioFiltriPanel" class="bg-white border-b px-3 md:px-4 py-3 shrink-0 max-h-[46vh] overflow-y-auto shadow-inner">
+                <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 text-xs">
+                    <div class="space-y-1.5">
+                        <p class="font-bold text-[10px] uppercase tracking-wide text-gray-500"><i class="fa-solid fa-layer-group mr-1 text-agesci-purple"></i>Calendari visibili</p>
+                        <label v-for="c in calendarScopes" :key="c.id" class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <input type="checkbox" v-model="calendarioFiltri.calendari" :value="c.id" class="rounded text-agesci-purple focus:ring-agesci-purple">
+                            <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: c.color }"></span>
+                            <span class="font-medium flex-grow">{{ c.label }}</span>
+                            <span class="text-[10px] text-gray-400">{{ calendarioConteggiScope[c.id] || 0 }}</span>
+                        </label>
+                    </div>
+                    <div class="space-y-1.5">
+                        <p class="font-bold text-[10px] uppercase tracking-wide text-gray-500"><i class="fa-solid fa-tags mr-1 text-agesci-purple"></i>Tipologie di evento</p>
+                        <div class="grid grid-cols-2 gap-1">
+                            <label v-for="t in calendarEventTypes" :key="t.id" class="flex items-center gap-1.5 p-1.5 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" v-model="calendarioFiltri.tipi" :value="t.id" class="rounded text-agesci-purple focus:ring-agesci-purple">
+                                <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: t.color }"></span>
+                                <span class="truncate">{{ t.label }}</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="space-y-1.5">
+                        <p class="font-bold text-[10px] uppercase tracking-wide text-gray-500"><i class="fa-solid fa-users mr-1 text-agesci-purple"></i>A chi è rivolto</p>
+                        <div class="grid grid-cols-2 gap-1">
+                            <label v-for="a in calendarAudiences" :key="a.id" class="flex items-center gap-1.5 p-1.5 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" v-model="calendarioFiltri.destinatari" :value="a.id" class="rounded text-agesci-purple focus:ring-agesci-purple">
+                                <span class="truncate">{{ a.label }}</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="font-bold text-[10px] uppercase tracking-wide text-gray-500"><i class="fa-solid fa-magnifying-glass mr-1 text-agesci-purple"></i>Cerca e mostra</p>
+                        <input v-model="calendarioRicerca" type="search" placeholder="Cerca un evento..." class="w-full border rounded-xl p-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" v-model="calendarioFiltri.soloPromemoria" class="rounded text-agesci-purple focus:ring-agesci-purple">
+                            <span><i class="fa-solid fa-bell text-amber-500 mr-1"></i>Solo eventi con promemoria</span>
+                        </label>
+                        <label v-if="currentUser" class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" v-model="calendarioFiltri.soloMiei" class="rounded text-agesci-purple focus:ring-agesci-purple">
+                            <span><i class="fa-solid fa-user-pen text-agesci-purple mr-1"></i>Solo eventi creati da me</span>
+                        </label>
+                        <button @click="resetFiltriCalendario" class="text-agesci-purple font-bold hover:underline text-[11px]"><i class="fa-solid fa-rotate-left mr-1"></i>Mostra tutto</button>
+                    </div>
+                </div>
+                <p class="max-w-7xl mx-auto text-[10px] text-gray-400 mt-2">Le scelte restano salvate su questo dispositivo. Deselezionando una tipologia o un calendario, gli eventi corrispondenti vengono nascosti dalla vista.</p>
+            </div>
+
+            <!-- CORPO DEL CALENDARIO -->
+            <div class="flex-grow overflow-auto p-2 md:p-4">
+                <div class="max-w-7xl mx-auto" :class="calendarioSubView === 'giorno' ? 'grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] gap-4 items-start' : ''">
+
+                    <!-- VISTA MESE -->
+                    <div v-if="calendarioSubView === 'mese'" class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+                        <div class="grid grid-cols-7 bg-gray-50 border-b text-[9px] md:text-[11px] font-bold text-gray-500 uppercase">
+                            <div v-for="g in ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']" :key="g" class="p-1.5 md:p-2 text-center">{{ g }}</div>
+                        </div>
+                        <div class="grid grid-cols-7">
+                            <div v-for="day in calendarioGrigliaMese" :key="day.key" class="border-r border-b border-gray-100 min-h-[76px] md:min-h-[118px] p-1 cursor-pointer transition hover:bg-gray-50/70" :class="[!day.inMonth ? 'bg-gray-50/70' : '', day.isToday ? 'bg-agesci-yellow/5' : '']" @click="openNewCalendarEvent(day.key)">
+                                <div class="flex justify-end">
+                                    <span class="text-[10px] md:text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full" :class="day.isToday ? 'bg-agesci-dark text-white' : (day.inMonth ? 'text-gray-700' : 'text-gray-300')">{{ day.dayNumber }}</span>
+                                </div>
+                                <div class="space-y-0.5 mt-0.5">
+                                    <!-- Mobile: pallini colorati come nel mese di Google Calendar -->
+                                    <button @click.stop="calendarioApriGiorno(day.key)" class="md:hidden flex flex-wrap items-center gap-1 px-1 py-1">
+                                        <span v-for="ev in day.events.slice(0, 4)" :key="ev.id" class="w-1.5 h-1.5 rounded-full" :style="{ backgroundColor: tipoEventoCalendario(ev.type).color }"></span>
+                                        <span v-if="day.events.length > 4" class="text-[8px] font-bold text-gray-400">+{{ day.events.length - 4 }}</span>
+                                    </button>
+                                    <!-- Desktop: titoli degli eventi -->
+                                    <div v-for="ev in day.events.slice(0, 2)" :key="'d-' + ev.id" @click.stop="apriEventoCalendario(ev)" class="hidden md:block rounded px-1 py-0.5 text-[8px] md:text-[10px] font-semibold border-l-2 truncate cursor-pointer hover:opacity-80" :style="stileEventoCalendario(ev)" :title="etichettaEventoCalendario(ev)">
+                                        <span v-if="!ev.allDay" class="font-normal">{{ ev.startTime }} </span>{{ ev.title }}
+                                    </div>
+                                    <button v-if="day.events.length > 2" @click.stop="calendarioApriGiorno(day.key)" class="hidden md:block text-[9px] text-agesci-purple font-bold px-1 hover:underline">
+                                        +{{ day.events.length - 2 }} altri
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="calendarioGrigliaMese.every(d => d.events.length === 0)" class="p-6 text-center text-xs text-gray-400 border-t">
+                            <i class="fa-regular fa-calendar text-2xl text-gray-300 block mb-2"></i>
+                            Nessun evento visibile in questo mese con i filtri attuali.
+                        </div>
+                    </div>
+
+                    <!-- VISTA SETTIMANA -->
+                    <div v-else-if="calendarioSubView === 'settimana'" class="space-y-2">
+                        <p class="md:hidden text-[10px] text-gray-400 text-center"><i class="fa-solid fa-arrows-left-right mr-1"></i>Scorri lateralmente per vedere tutti i giorni della settimana</p>
+                        <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <div class="min-w-[760px]">
+                                <div class="grid grid-cols-7 border-b bg-gray-50">
+                                    <button v-for="day in calendarioGrigliaSettimana" :key="day.key" @click="calendarioApriGiorno(day.key)" class="p-2 text-center border-r border-gray-100 last:border-r-0 hover:bg-purple-50/50 transition" :class="day.isToday ? 'bg-agesci-yellow/10' : ''">
+                                        <p class="text-[10px] uppercase text-gray-500 font-bold">{{ giornoSettimanaBreve(day.key) }}</p>
+                                        <p class="text-lg font-bold" :class="day.isToday ? 'text-agesci-purple' : 'text-agesci-dark'">{{ day.dayNumber }}</p>
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-7">
+                                    <div v-for="day in calendarioGrigliaSettimana" :key="day.key" class="border-r border-gray-100 last:border-r-0 min-h-[320px] p-1 space-y-1" :class="day.isToday ? 'bg-agesci-yellow/5' : ''" @click="openNewCalendarEvent(day.key)">
+                                        <div v-for="ev in day.events" :key="ev.id" @click.stop="apriEventoCalendario(ev)" class="rounded-lg border-l-4 p-1.5 text-[10px] cursor-pointer shadow-sm hover:opacity-80" :style="stileEventoCalendario(ev)" :title="etichettaEventoCalendario(ev)">
+                                            <p class="font-bold truncate">{{ ev.allDay ? 'Tutto il giorno' : ev.startTime }}</p>
+                                            <p class="truncate font-semibold">{{ ev.title }}</p>
+                                            <p v-if="ev.location" class="truncate opacity-80"><i class="fa-solid fa-location-dot text-[8px]"></i> {{ ev.location }}</p>
+                                        </div>
+                                        <button v-if="day.events.length === 0" class="w-full text-left text-[10px] text-gray-300 hover:text-agesci-purple px-1 py-2 transition">+ Aggiungi</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+
+                    <!-- VISTA GIORNO -->
+                    <div v-else class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+                        <div class="px-4 py-3 border-b flex flex-wrap justify-between items-center gap-2">
+                            <div>
+                                <p class="font-bold text-agesci-dark text-sm md:text-base">{{ formattaDataEstesa(calendarioCursor) }}</p>
+                                <p class="text-[11px] text-gray-500">{{ calendarioEventiGiorno.length }} {{ calendarioEventiGiorno.length === 1 ? 'evento' : 'eventi' }} visibili</p>
+                            </div>
+                            <button v-if="currentUser" @click="openNewCalendarEvent(calendarioCursor)" class="bg-agesci-dark text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-agesci-purple transition">
+                                <i class="fa-solid fa-plus mr-1"></i>Aggiungi evento
+                            </button>
+                        </div>
+
+                        <div v-if="calendarioEventiTuttoIlGiorno.length" class="p-3 bg-gray-50 border-b space-y-1">
+                            <p class="text-[9px] uppercase font-bold text-gray-400 tracking-wide">Tutto il giorno / in corso</p>
+                            <div v-for="ev in calendarioEventiTuttoIlGiorno" :key="ev.id" @click="apriEventoCalendario(ev)" class="rounded-lg border-l-4 p-2 text-xs cursor-pointer shadow-sm hover:opacity-80" :style="stileEventoCalendario(ev)">
+                                <p class="font-bold">{{ ev.title }}</p>
+                                <p class="text-[10px] opacity-80">{{ etichettaDestinatariEvento(ev) }}<span v-if="ev.location"> · {{ ev.location }}</span></p>
+                            </div>
+                        </div>
+
+                        <div id="calendario-timeline-giorno" class="max-h-[60vh] xl:max-h-[calc(100vh-330px)] overflow-y-auto">
+                            <div v-for="ora in calendarioOre" :key="ora" class="flex border-b border-gray-100 min-h-[38px]">
+                                <div class="w-14 shrink-0 text-[10px] text-gray-400 text-right pr-2 pt-1.5 font-medium">{{ padOra(ora) }}</div>
+                                <div class="flex-grow border-l border-gray-100 p-1 space-y-1">
+                                    <div v-for="ev in calendarioEventiAllOra(ora)" :key="ev.id" @click="apriEventoCalendario(ev)" class="rounded-lg border-l-4 px-2 py-1.5 text-xs cursor-pointer shadow-sm hover:opacity-80" :style="stileEventoCalendario(ev)">
+                                        <span class="font-bold">{{ ev.startTime }}<span v-if="ev.endTime">–{{ ev.endTime }}</span></span>
+                                        <span class="font-semibold ml-1">{{ ev.title }}</span>
+                                        <span v-if="ev.location" class="block text-[10px] opacity-80"><i class="fa-solid fa-location-dot text-[8px]"></i> {{ ev.location }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="calendarioEventiGiorno.length === 0" class="p-8 text-center text-xs text-gray-400 border-t">
+                            <i class="fa-regular fa-calendar-xmark text-3xl text-gray-300 block mb-2"></i>
+                            Nessun evento in questa giornata. Clicca "Aggiungi evento" per crearne uno.
+                        </div>
+                    </div>
+
+                    <!-- PROSSIMI EVENTI -->
+                    <aside v-if="calendarioSubView === 'giorno'" class="bg-white rounded-2xl border shadow-sm p-3 space-y-2">
+                        <h3 class="font-bold text-xs text-agesci-dark uppercase tracking-wide"><i class="fa-solid fa-list-check text-agesci-purple mr-1"></i>Prossimi eventi</h3>
+                        <div v-for="ev in prossimiEventiCalendario" :key="ev.id" @click="apriEventoCalendario(ev)" class="rounded-xl border p-2 cursor-pointer hover:bg-gray-50 transition space-y-1">
+                            <div class="flex items-start justify-between gap-2">
+                                <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded" :style="stileEventoCalendario(ev)">{{ tipoEventoCalendario(ev.type).label }}</span>
+                                <span class="text-[10px] text-gray-400 shrink-0">{{ formattaDataBreve(ev.startDate) }}</span>
+                            </div>
+                            <p class="font-bold text-[11px] text-agesci-dark leading-tight">{{ ev.title }}</p>
+                            <p class="text-[10px] text-gray-500">{{ ev.allDay ? 'Tutto il giorno' : (ev.startTime || '') }}<span v-if="ev.reminder && ev.reminder.enabled"> · <i class="fa-solid fa-bell text-amber-500"></i></span></p>
+                        </div>
+                        <p v-if="prossimiEventiCalendario.length === 0" class="text-[11px] text-gray-400 py-3 text-center">Nessun prossimo evento visibile.</p>
+                        <button @click="showCalendarImportModal = true" class="w-full border border-purple-200 bg-purple-50 text-agesci-purple rounded-xl py-2 text-[11px] font-bold hover:bg-purple-100 transition">
+                            <i class="fa-solid fa-calendar-plus mr-1"></i>Importa nel calendario personale
+                        </button>
+                    </aside>
+                </div>
+            </div>
+
+            <!-- TOAST NOTIFICHE / ESITO -->
+            <div v-if="calendarioToast" class="fixed bottom-20 lg:bottom-6 right-4 z-[5000] max-w-xs bg-agesci-dark text-white rounded-2xl shadow-2xl px-4 py-3 text-xs flex items-start gap-2 animate-fade-in">
+                <i class="fa-solid fa-bell text-agesci-yellow mt-0.5"></i>
+                <span class="flex-grow">{{ calendarioToast }}</span>
+                <button @click="calendarioToast = ''" class="text-white/60 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
             </div>
         </div>
+
+        <!-- MODALE DETTAGLIO EVENTO -->
+        <div v-if="selectedCalendarEvent" class="fixed inset-0 z-[3000] flex items-end md:items-center justify-center p-0 md:p-4">
+            <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="chiudiDettaglioEventoCalendario"></div>
+            <div class="relative w-full md:w-[560px] max-h-[92vh] bg-white rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up text-xs">
+                <div class="px-5 py-5 text-white shrink-0" :style="{ backgroundColor: tipoEventoCalendario(selectedCalendarEvent.type).color }">
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="flex flex-wrap gap-1.5">
+                            <span class="text-[9px] uppercase font-bold bg-white/20 backdrop-blur px-2 py-0.5 rounded-full">{{ tipoEventoCalendario(selectedCalendarEvent.type).label }}</span>
+                            <span class="text-[9px] uppercase font-bold bg-white/20 backdrop-blur px-2 py-0.5 rounded-full">{{ scopeEventoCalendario(selectedCalendarEvent.scope).label }}</span>
+                            <span v-if="selectedCalendarEvent.targetValue" class="text-[9px] font-bold bg-white/20 backdrop-blur px-2 py-0.5 rounded-full">{{ selectedCalendarEvent.targetValue }}</span>
+                        </div>
+                        <button @click="chiudiDettaglioEventoCalendario" class="bg-white/10 hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center transition shrink-0"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <h2 class="text-lg md:text-xl font-bold mt-2 leading-tight">{{ selectedCalendarEvent.title }}</h2>
+                    <p class="text-[11px] opacity-90 mt-1"><i class="fa-regular fa-calendar mr-1"></i>{{ formattaDataEvento(selectedCalendarEvent) }}</p>
+                </div>
+                <div class="p-5 overflow-y-auto flex-grow space-y-3 text-gray-700">
+                    <p v-if="selectedCalendarEvent.location"><i class="fa-solid fa-location-dot text-agesci-purple mr-2"></i>{{ selectedCalendarEvent.location }}</p>
+                    <p><i class="fa-solid fa-users text-agesci-purple mr-2"></i><strong>A chi è rivolto:</strong> {{ etichettaDestinatariEvento(selectedCalendarEvent) }}</p>
+                    <p v-if="selectedCalendarEvent.description" class="whitespace-pre-line leading-relaxed bg-gray-50 border rounded-xl p-3">{{ selectedCalendarEvent.description }}</p>
+                    <p v-if="selectedCalendarEvent.link">
+                        <a :href="urlSicuro(selectedCalendarEvent.link)" target="_blank" rel="noopener noreferrer" class="text-agesci-purple underline break-all"><i class="fa-solid fa-link mr-1"></i>Link / iscrizioni</a>
+                    </p>
+                    <div class="rounded-xl border p-3 flex items-start gap-2" :class="selectedCalendarEvent.reminder && selectedCalendarEvent.reminder.enabled ? 'bg-amber-50 border-amber-200' : 'bg-gray-50'">
+                        <i class="fa-solid fa-bell mt-0.5" :class="selectedCalendarEvent.reminder && selectedCalendarEvent.reminder.enabled ? 'text-amber-600' : 'text-gray-400'"></i>
+                        <div>
+                            <p class="font-bold text-[11px]">{{ selectedCalendarEvent.reminder && selectedCalendarEvent.reminder.enabled ? 'Promemoria attivo' : 'Nessun promemoria' }}</p>
+                            <p class="text-[10px] text-gray-500" v-if="selectedCalendarEvent.reminder && selectedCalendarEvent.reminder.enabled">Notifica dell'app {{ etichettaPromemoria(selectedCalendarEvent.reminder.minutesBefore) }}.</p>
+                            <p class="text-[10px] text-gray-500" v-else>Chi ha creato l'evento non ha impostato una notifica.</p>
+                        </div>
+                    </div>
+                    <p v-if="selectedCalendarEvent.authorName" class="text-[10px] text-gray-400">Creato da {{ selectedCalendarEvent.authorName }}</p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        <a :href="googleCalendarUrl(selectedCalendarEvent)" target="_blank" rel="noopener noreferrer" class="bg-agesci-dark text-white rounded-xl py-2.5 px-3 font-bold text-center hover:bg-agesci-purple transition">
+                            <i class="fa-brands fa-google mr-1"></i> Aggiungi a Google Calendar
+                        </a>
+                        <button @click="scaricaEventoICS(selectedCalendarEvent)" class="border border-agesci-dark text-agesci-dark rounded-xl py-2.5 px-3 font-bold hover:bg-gray-50 transition">
+                            <i class="fa-solid fa-download mr-1"></i> Apple / Outlook (.ics)
+                        </button>
+                    </div>
+
+                    <div v-if="puoGestireEventoCalendario(selectedCalendarEvent)" class="flex justify-end gap-2 pt-2 border-t">
+                        <button @click="modificaEventoCalendario(selectedCalendarEvent)" class="text-blue-600 font-bold hover:underline px-2 py-1"><i class="fa-solid fa-pen mr-1"></i>Modifica</button>
+                        <button @click="eliminaEventoCalendario(selectedCalendarEvent)" class="text-red-500 font-bold hover:underline px-2 py-1"><i class="fa-solid fa-trash mr-1"></i>Elimina</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODALE NUOVO / MODIFICA EVENTO -->
+        <div v-if="showCalendarEventModal" class="fixed inset-0 z-[3000] flex items-end md:items-center justify-center p-0 md:p-4">
+            <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="chiudiModaleEventoCalendario"></div>
+            <div class="relative w-full md:w-[640px] max-h-[94vh] bg-white rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up text-xs">
+                <div class="bg-agesci-dark text-white px-5 py-4 flex justify-between items-center shrink-0">
+                    <div>
+                        <p class="text-[9px] uppercase tracking-widest font-bold text-agesci-yellow">Calendario</p>
+                        <h3 class="text-lg font-bold">{{ isEditingCalendarEvent ? 'Modifica evento' : 'Nuovo evento' }}</h3>
+                    </div>
+                    <button @click="chiudiModaleEventoCalendario" class="bg-white/10 hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <form @submit.prevent="salvaEventoCalendario" class="p-5 overflow-y-auto flex-grow space-y-4">
+                    <div>
+                        <label class="block font-bold mb-1">Titolo evento *</label>
+                        <input v-model="calendarEventForm.title" type="text" required maxlength="150" class="w-full border rounded-xl p-2.5" placeholder="Es. Assemblea regionale capi">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold mb-1">Tipologia evento *</label>
+                            <select v-model="calendarEventForm.type" class="w-full border rounded-xl p-2.5 bg-white">
+                                <option v-for="t in calendarEventTypes" :key="t.id" :value="t.id">{{ t.label }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">Calendario *</label>
+                            <select v-model="calendarEventForm.scope" @change="impostaTargetCalendario" class="w-full border rounded-xl p-2.5 bg-white">
+                                <option v-for="c in calendarScopes" :key="c.id" :value="c.id">{{ c.label }}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div v-if="calendarEventForm.scope === 'zona'">
+                        <label class="block font-bold mb-1">Zona *</label>
+                        <select v-model="calendarEventForm.targetValue" class="w-full border rounded-xl p-2.5 bg-white">
+                            <option value="" disabled>Seleziona la zona...</option>
+                            <option v-for="z in adminZonesList" :key="z.name" :value="z.name">{{ z.name }}</option>
+                        </select>
+                    </div>
+                    <div v-if="calendarEventForm.scope === 'gruppo'">
+                        <label class="block font-bold mb-1">Gruppo *</label>
+                        <select v-model="calendarEventForm.targetValue" class="w-full border rounded-xl p-2.5 bg-white">
+                            <option value="" disabled>Seleziona il gruppo...</option>
+                            <option v-for="g in tuttiIGruppi" :key="g" :value="g">{{ g }}</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold mb-1">A chi è rivolto *</label>
+                        <div class="flex flex-wrap gap-1.5">
+                            <label v-for="a in calendarAudiences" :key="a.id" class="cursor-pointer">
+                                <input type="checkbox" class="hidden" :checked="calendarEventForm.audience.includes(a.id)" @change="toggleDestinatarioCalendario(a.id)">
+                                <span class="inline-block border rounded-full px-3 py-1.5 font-semibold transition" :class="calendarEventForm.audience.includes(a.id) ? 'bg-agesci-purple text-white border-agesci-purple' : 'bg-white text-gray-600 border-gray-200 hover:border-agesci-purple'">{{ a.label }}</span>
+                            </label>
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-1">Puoi selezionare più destinatari (es. Capi e Rover/Scolte).</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold mb-1">Data inizio *</label>
+                            <input v-model="calendarEventForm.startDate" type="date" required class="w-full border rounded-xl p-2.5 bg-white">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">Data fine</label>
+                            <input v-model="calendarEventForm.endDate" type="date" :min="calendarEventForm.startDate" class="w-full border rounded-xl p-2.5 bg-white">
+                        </div>
+                    </div>
+
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" v-model="calendarEventForm.allDay" class="rounded text-agesci-purple focus:ring-agesci-purple">
+                        <span class="font-semibold">Tutto il giorno</span>
+                    </label>
+
+                    <div v-if="!calendarEventForm.allDay" class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold mb-1">Ora inizio *</label>
+                            <input v-model="calendarEventForm.startTime" type="time" class="w-full border rounded-xl p-2.5 bg-white">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">Ora fine *</label>
+                            <input v-model="calendarEventForm.endTime" type="time" class="w-full border rounded-xl p-2.5 bg-white">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold mb-1">Luogo</label>
+                            <input v-model="calendarEventForm.location" type="text" maxlength="300" class="w-full border rounded-xl p-2.5" placeholder="Dove si svolge?">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">Link / iscrizioni</label>
+                            <input v-model="calendarEventForm.link" type="text" class="w-full border rounded-xl p-2.5" placeholder="https://...">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold mb-1">Descrizione</label>
+                        <textarea v-model="calendarEventForm.description" rows="3" maxlength="5000" class="w-full border rounded-xl p-2.5" placeholder="Programma, informazioni utili, quote di partecipazione..."></textarea>
+                    </div>
+
+                    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 space-y-2">
+                        <label class="flex items-start gap-2 cursor-pointer">
+                            <input type="checkbox" v-model="calendarEventForm.reminder.enabled" class="mt-0.5 rounded text-amber-600 focus:ring-amber-500">
+                            <span>
+                                <strong class="block text-agesci-dark">Ricorda questo evento con una notifica dell'app</strong>
+                                <span class="text-[10px] text-gray-500">Sei tu a decidere, in fase di creazione, se l'evento deve generare un promemoria e con quanto anticipo.</span>
+                            </span>
+                        </label>
+                        <div v-if="calendarEventForm.reminder.enabled" class="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-6">
+                            <div>
+                                <label class="block font-semibold mb-1 text-[10px]">Quanto tempo prima?</label>
+                                <select v-model.number="calendarEventForm.reminder.minutesBefore" class="w-full border rounded-xl p-2 bg-white">
+                                    <option v-for="r in calendarReminderOptions" :key="r.value" :value="r.value">{{ r.label }}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <p v-if="calendarEventForm.reminder.enabled" class="text-[10px] text-gray-400 pl-6">La notifica viene mostrata dall'app (anche installata sulla schermata Home) quando il dispositivo ha le notifiche attive. Il promemoria è indicato da chi crea l'evento.</p>
+                        <div v-if="calendarEventForm.reminder.enabled && notificationPermission !== 'granted'" class="pl-6">
+                            <button v-if="notificationPermission === 'default'" type="button" @click="richiediPermessoNotifiche" class="bg-agesci-dark text-white rounded-lg px-3 py-1.5 font-bold">
+                                <i class="fa-solid fa-bell mr-1"></i> Attiva le notifiche sul tuo dispositivo
+                            </button>
+                            <p v-else class="text-[10px] text-amber-800">Le notifiche risultano bloccate o non supportate su questo dispositivo. L'evento sarà comunque salvato con il promemoria richiesto.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" @click="chiudiModaleEventoCalendario" class="px-4 py-2 border rounded-xl font-bold">Annulla</button>
+                        <button type="submit" class="bg-agesci-dark text-white px-5 py-2 rounded-xl font-bold shadow hover:bg-agesci-purple transition">{{ isEditingCalendarEvent ? 'Salva modifiche' : 'Pubblica evento' }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODALE IMPORTA NEL CALENDARIO PERSONALE -->
+        <div v-if="showCalendarImportModal" class="fixed inset-0 z-[3000] flex items-end md:items-center justify-center p-0 md:p-4">
+            <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showCalendarImportModal = false"></div>
+            <div class="relative w-full md:w-[560px] max-h-[90vh] bg-white rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up text-xs">
+                <div class="bg-agesci-dark text-white px-5 py-4 flex justify-between items-center shrink-0">
+                    <div>
+                        <p class="text-[9px] uppercase tracking-widest font-bold text-agesci-yellow">Calendario</p>
+                        <h3 class="text-lg font-bold">Importa nel calendario personale</h3>
+                    </div>
+                    <button @click="showCalendarImportModal = false" class="bg-white/10 hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="p-5 overflow-y-auto space-y-4 text-gray-700">
+                    <div class="bg-purple-50 border border-purple-100 rounded-2xl p-3 space-y-2">
+                        <p class="font-bold text-agesci-dark"><i class="fa-solid fa-file-export text-agesci-purple mr-1"></i> Esporta tutto il calendario</p>
+                        <p class="text-[11px] text-gray-600">Scarica un file <strong>.ics</strong> con gli eventi attualmente visibili (rispetta i filtri scelti). Puoi importarlo in Google Calendar, Apple Calendario o Outlook.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button @click="scaricaCalendarioICS" class="bg-agesci-dark text-white px-3 py-2 rounded-xl font-bold hover:bg-agesci-purple transition"><i class="fa-solid fa-download mr-1"></i> Scarica .ics</button>
+                            <a href="https://calendar.google.com/calendar/r/settings/export" target="_blank" rel="noopener noreferrer" class="border rounded-xl px-3 py-2 font-bold text-gray-600 hover:bg-gray-50 transition"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> Importa in Google</a>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p class="font-bold text-agesci-dark mb-2"><i class="fa-brands fa-google text-agesci-purple mr-1"></i> Aggiungi un singolo evento</p>
+                        <div class="space-y-2">
+                            <div v-for="ev in prossimiEventiCalendario" :key="ev.id" class="border rounded-xl p-2.5 flex items-center justify-between gap-2">
+                                <div class="min-w-0">
+                                    <p class="font-bold truncate text-[11px]">{{ ev.title }}</p>
+                                    <p class="text-[10px] text-gray-500">{{ formattaDataEvento(ev) }}</p>
+                                </div>
+                                <div class="flex gap-1 shrink-0">
+                                    <a :href="googleCalendarUrl(ev)" target="_blank" rel="noopener noreferrer" class="bg-[#4285F4] text-white rounded-lg px-2 py-1.5 font-bold text-[10px]" title="Aggiungi a Google Calendar"><i class="fa-brands fa-google"></i></a>
+                                    <button @click="scaricaEventoICS(ev)" class="border rounded-lg px-2 py-1.5 font-bold text-[10px] text-gray-600" title="Scarica .ics"><i class="fa-solid fa-download"></i></button>
+                                </div>
+                            </div>
+                            <p v-if="prossimiEventiCalendario.length === 0" class="text-[11px] text-gray-400 text-center py-3">Nessun prossimo evento visibile con i filtri attuali.</p>
+                        </div>
+                    </div>
+
+                    <p class="text-[10px] text-gray-400">Suggerimento: dopo aver scaricato il file .ics, aprilo e conferma l'importazione nel tuo calendario personale. Gli eventi con promemoria includono anche l'avviso nel calendario.</p>
+                </div>
+            </div>
+        </div>
+
 
         <!-- MODULO 4: BILANCI EVENTI -->
         <div v-show="currentModule === 'bilanci' && canAccessModule('bilanci')" class="absolute inset-0 flex flex-col p-4 md:p-8 overflow-y-auto bg-gray-50">
@@ -1795,7 +2240,7 @@
             <i class="fa-solid fa-compass text-base mb-0.5"></i><span class="text-[9px] uppercase">Attività</span>
         </button>
         <button v-if="canAccessModule('eventi')" @click="currentModule = 'eventi'" :class="{'text-agesci-yellow font-bold': currentModule === 'eventi', 'text-gray-400': currentModule !== 'eventi'}" class="flex flex-col items-center justify-center w-full">
-            <i class="fa-solid fa-calendar-days text-base mb-0.5"></i><span class="text-[9px] uppercase">Eventi</span>
+            <i class="fa-solid fa-calendar-days text-base mb-0.5"></i><span class="text-[9px] uppercase">Calendario</span>
         </button>
         <button v-if="canAccessModule('bilanci')" @click="currentModule = 'bilanci'" :class="{'text-agesci-yellow font-bold': currentModule === 'bilanci', 'text-gray-400': currentModule !== 'bilanci'}" class="flex flex-col items-center justify-center w-full">
             <i class="fa-solid fa-wallet text-base mb-0.5"></i><span class="text-[9px] uppercase">Bilanci</span>
@@ -2152,7 +2597,7 @@
     const MODULI_ELENCO = [
         { key: 'territorio', label: 'Luoghi, Campi e sentieri', icon: 'fa-tent', desc: 'Mappa e elenco di strutture, cammini e sedi scout.' },
         { key: 'attivita', label: 'Attività & Settori', icon: 'fa-compass', desc: 'Proposte di attività con possibilità di prenotazione.' },
-        { key: 'eventi', label: 'Eventi Regionali', icon: 'fa-calendar-days', desc: 'Area utilità per gli eventi regionali.' },
+        { key: 'eventi', label: 'Calendario', icon: 'fa-calendar-days', desc: 'Calendario eventi regionali, di zona e di gruppo.' },
         { key: 'bilanci', label: 'Bilanci Eventi', icon: 'fa-wallet', desc: 'Bilanci degli eventi e richieste di rimborso spese.' }
     ];
     // Per ogni sezione: "ospiti" = utenti senza accesso (non loggati), "utenti" = utenti con accesso (loggati)
@@ -2187,6 +2632,84 @@
     function normalizzaTesto(v) {
         return String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     }
+
+    // ------------------------------------------------------------------
+    // CALENDARIO (stile Google Calendar)
+    // Tipologie, destinatari e calendari visibili. I colori sono usati
+    // direttamente negli stili inline per evitare classi Tailwind dinamiche.
+    // ------------------------------------------------------------------
+    const CALENDAR_EVENT_TYPES = [
+        { id: 'formazione', label: 'Formazione Capi', color: '#462678', soft: '#EDE7F5' },
+        { id: 'campo', label: 'Campo Regionale', color: '#21A067', soft: '#E6F6EE' },
+        { id: 'route', label: 'Route / Pista', color: '#B45309', soft: '#FEF3C7' },
+        { id: 'settore', label: 'Settore / Branca', color: '#2563EB', soft: '#DBEAFE' },
+        { id: 'consiglio', label: 'Consiglio / Assemblea', color: '#9B66A5', soft: '#F3E8F7' },
+        { id: 'spiritualita', label: 'Spiritualità', color: '#0F766E', soft: '#CCFBF1' },
+        { id: 'servizio', label: 'Servizio / Solidarietà', color: '#DC2626', soft: '#FEE2E2' },
+        { id: 'altro', label: 'Altro', color: '#6B7280', soft: '#F3F4F6' }
+    ];
+    const CALENDAR_AUDIENCES = [
+        { id: 'tutti', label: 'Tutti' },
+        { id: 'capi', label: 'Capi' },
+        { id: 'lc', label: 'Lupetti / Coccinelle' },
+        { id: 'eg', label: 'Esploratori / Guide' },
+        { id: 'rs', label: 'Rover / Scolte' },
+        { id: 'gruppi', label: 'Gruppi' },
+        { id: 'zone', label: 'Zone' }
+    ];
+    const CALENDAR_SCOPES = [
+        { id: 'regionale', label: 'Calendario regionale', color: '#462678', soft: '#EDE7F5' },
+        { id: 'zona', label: 'Calendario di zona', color: '#21A067', soft: '#E6F6EE' },
+        { id: 'gruppo', label: 'Calendario di gruppo', color: '#2563EB', soft: '#DBEAFE' }
+    ];
+    const CALENDAR_REMINDER_OPTIONS = [
+        { value: 0, label: "All'ora dell'evento" },
+        { value: 15, label: '15 minuti prima' },
+        { value: 30, label: '30 minuti prima' },
+        { value: 60, label: '1 ora prima' },
+        { value: 180, label: '3 ore prima' },
+        { value: 1440, label: '1 giorno prima' },
+        { value: 2880, label: '2 giorni prima' },
+        { value: 10080, label: '1 settimana prima' }
+    ];
+    const CALENDAR_NOTIFY_STORAGE_KEY = 'agesci_calendario_notificati_v1';
+    const CALENDAR_FILTERS_STORAGE_KEY = 'agesci_calendario_filtri_v1';
+
+    function pad2(n) { return String(n).padStart(2, '0'); }
+    function dataISO(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
+    function oggiISO() { return dataISO(new Date()); }
+    // Mezzogiorno: evita i salti di giorno dovuti all'ora legale.
+    function parseISODate(key) {
+        const p = String(key || '').slice(0, 10).split('-').map(Number);
+        if (p.length !== 3 || p.some(n => !isFinite(n))) return new Date();
+        return new Date(p[0], p[1] - 1, p[2], 12, 0, 0, 0);
+    }
+    function aggiungiGiorniISO(key, n) {
+        const d = parseISODate(key);
+        d.setDate(d.getDate() + n);
+        return dataISO(d);
+    }
+    function inizioSettimanaISO(key) {
+        const d = parseISODate(key);
+        const giorno = (d.getDay() + 6) % 7; // lunedì = 0
+        d.setDate(d.getDate() - giorno);
+        return dataISO(d);
+    }
+    function permessoNotificheAttuale() {
+        return (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
+    }
+    function createEmptyCalendarEvent() {
+        const today = oggiISO();
+        return {
+            title: '', type: 'formazione', audience: ['tutti'],
+            allDay: false, startDate: today, endDate: today,
+            startTime: '09:00', endTime: '17:00',
+            location: '', description: '', link: '',
+            scope: 'regionale', targetValue: '',
+            reminder: { enabled: true, minutesBefore: 1440 }
+        };
+    }
+
 
     // ------------------------------------------------------------------
     // SICUREZZA: i luoghi possono essere proposti da chiunque, quindi tutto cio' che
@@ -2356,6 +2879,35 @@
                 editingActivityId: null,
                 newActivity: { category: '', title: '', date: '', description: '', branch: '', timeType: 'intera', startTime: '09:00', endTime: '17:00', managerEmails: '' },
                 newActivityBooking: { groupName: '', branch: 'LC', responsible: '', participantsCount: 1 },
+
+                /* CALENDARIO */
+                eventiCalendario: [],
+                calendarioSubView: 'mese',
+                calendarioCursor: oggiISO(),
+                calendarioFiltriPanel: false,
+                calendarioFiltri: {
+                    calendari: CALENDAR_SCOPES.map(c => c.id),
+                    tipi: CALENDAR_EVENT_TYPES.map(t => t.id),
+                    destinatari: CALENDAR_AUDIENCES.map(a => a.id),
+                    soloPromemoria: false,
+                    soloMiei: false
+                },
+                calendarioRicerca: '',
+                calendarEventTypes: CALENDAR_EVENT_TYPES,
+                calendarAudiences: CALENDAR_AUDIENCES,
+                calendarScopes: CALENDAR_SCOPES,
+                calendarReminderOptions: CALENDAR_REMINDER_OPTIONS,
+                showCalendarEventModal: false,
+                showCalendarImportModal: false,
+                isEditingCalendarEvent: false,
+                editingCalendarEventId: null,
+                calendarEventForm: createEmptyCalendarEvent(),
+                selectedCalendarEvent: null,
+                notificationPermission: permessoNotificheAttuale(),
+                reminderTimer: null,
+                calendarioToast: '',
+                calendarioToastTimer: null,
+                calendarDeepLinkHandled: false,
 
                 expenseCategories: ['Trasporti', 'Materiali', 'Viveri', 'Affitto casa', 'Fazzolettoni, quaderni, bottoni, distintivi, bandierine', 'Ricordino/Simbolo', 'Sicurezza', 'Altro'],
                 budgets: [],
@@ -2570,6 +3122,134 @@
 
                 return Object.values(grouped).sort((a, b) => a.iso.localeCompare(b.iso));
             },
+
+            /* ---------------- CALENDARIO ---------------- */
+            eventiCalendarioFiltrati() {
+                const f = this.calendarioFiltri;
+                const q = normalizzaTesto(this.calendarioRicerca.trim());
+                return this.eventiCalendario
+                    .filter(ev => {
+                        const scope = ev.scope || 'regionale';
+                        if (!f.calendari.includes(scope)) return false;
+                        if (!f.tipi.includes(ev.type || 'altro')) return false;
+                        const audience = Array.isArray(ev.audience) && ev.audience.length ? ev.audience : ['tutti'];
+                        if (f.destinatari.length !== CALENDAR_AUDIENCES.length && !audience.includes('tutti') && !audience.some(a => f.destinatari.includes(a))) return false;
+                        if (f.soloPromemoria && !(ev.reminder && ev.reminder.enabled)) return false;
+                        if (f.soloMiei && ev.authorEmail !== this.myEmail) return false;
+                        if (q) {
+                            const testo = normalizzaTesto([
+                                ev.title, ev.description, ev.location, ev.targetValue,
+                                ...audience.map(a => { const found = CALENDAR_AUDIENCES.find(x => x.id === a); return found ? found.label : a; })
+                            ].join(' '));
+                            if (!testo.includes(q)) return false;
+                        }
+                        return true;
+                    })
+                    .sort((a, b) => {
+                        const ka = `${a.startDate} ${a.allDay ? '00:00' : (a.startTime || '00:00')}`;
+                        const kb = `${b.startDate} ${b.allDay ? '00:00' : (b.startTime || '00:00')}`;
+                        return ka.localeCompare(kb) || String(a.title).localeCompare(String(b.title));
+                    });
+            },
+            calendarioGrigliaMese() {
+                const base = parseISODate(this.calendarioCursor);
+                const primo = new Date(base.getFullYear(), base.getMonth(), 1, 12, 0, 0, 0);
+                const inizio = inizioSettimanaISO(dataISO(primo));
+                const giorniMese = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
+                const offset = Math.round((primo - parseISODate(inizio)) / 86400000);
+                const celle = Math.ceil((offset + giorniMese) / 7) * 7;
+                const oggi = oggiISO();
+                const out = [];
+                for (let i = 0; i < celle; i++) {
+                    const key = aggiungiGiorniISO(inizio, i);
+                    const d = parseISODate(key);
+                    out.push({
+                        key,
+                        dayNumber: d.getDate(),
+                        inMonth: d.getMonth() === base.getMonth() && d.getFullYear() === base.getFullYear(),
+                        isToday: key === oggi,
+                        events: this.eventiCalendarioDelGiorno(key)
+                    });
+                }
+                return out;
+            },
+            calendarioGrigliaSettimana() {
+                const inizio = inizioSettimanaISO(this.calendarioCursor);
+                const oggi = oggiISO();
+                const out = [];
+                for (let i = 0; i < 7; i++) {
+                    const key = aggiungiGiorniISO(inizio, i);
+                    const d = parseISODate(key);
+                    out.push({
+                        key,
+                        dayNumber: d.getDate(),
+                        isToday: key === oggi,
+                        events: this.eventiCalendarioDelGiorno(key)
+                    });
+                }
+                return out;
+            },
+            calendarioEventiGiorno() {
+                return this.eventiCalendarioDelGiorno(this.calendarioCursor);
+            },
+            calendarioEventiTuttoIlGiorno() {
+                return this.calendarioEventiGiorno.filter(ev => ev.allDay || ev.startDate !== this.calendarioCursor);
+            },
+            calendarioOre() {
+                return Array.from({ length: 24 }, (_, i) => i);
+            },
+            calendarioTitolo() {
+                const d = parseISODate(this.calendarioCursor);
+                const capitalizza = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+                if (this.calendarioSubView === 'giorno') {
+                    return capitalizza(d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
+                }
+                if (this.calendarioSubView === 'settimana') {
+                    const inizio = parseISODate(inizioSettimanaISO(this.calendarioCursor));
+                    const fine = parseISODate(aggiungiGiorniISO(dataISO(inizio), 6));
+                    const meseInizio = inizio.toLocaleDateString('it-IT', { month: 'long' });
+                    const meseFine = fine.toLocaleDateString('it-IT', { month: 'long' });
+                    if (meseInizio === meseFine) {
+                        return capitalizza(`${inizio.getDate()} – ${fine.getDate()} ${meseFine} ${fine.getFullYear()}`);
+                    }
+                    return capitalizza(`${inizio.getDate()} ${meseInizio} – ${fine.getDate()} ${meseFine} ${fine.getFullYear()}`);
+                }
+                return capitalizza(d.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' }));
+            },
+            calendarioFiltriAttiviCount() {
+                const f = this.calendarioFiltri;
+                let n = 0;
+                if (!f.calendari.length || f.calendari.length !== CALENDAR_SCOPES.length) n++;
+                if (!f.tipi.length || f.tipi.length !== CALENDAR_EVENT_TYPES.length) n++;
+                if (!f.destinatari.length || f.destinatari.length !== CALENDAR_AUDIENCES.length) n++;
+                if (f.soloPromemoria) n++;
+                if (f.soloMiei) n++;
+                if (this.calendarioRicerca.trim()) n++;
+                return n;
+            },
+            calendarioConteggiScope() {
+                const out = {};
+                this.eventiCalendario.forEach(ev => {
+                    const s = ev.scope || 'regionale';
+                    out[s] = (out[s] || 0) + 1;
+                });
+                return out;
+            },
+            calendarioConteggiTipo() {
+                const out = {};
+                this.eventiCalendario.forEach(ev => {
+                    const t = ev.type || 'altro';
+                    out[t] = (out[t] || 0) + 1;
+                });
+                return out;
+            },
+            prossimiEventiCalendario() {
+                const oggi = oggiISO();
+                return this.eventiCalendarioFiltrati
+                    .filter(ev => (ev.endDate || ev.startDate) >= oggi)
+                    .slice(0, 8);
+            },
+
             visibleBudgets() {
                 if (this.isAdminOrSuper) return this.budgets;
                 if (!this.currentUser) return [];
@@ -2621,6 +3301,22 @@
                         this.renderMarkers();
                     });
                 }
+                if (newVal === 'eventi') {
+                    this.notificationPermission = permessoNotificheAttuale();
+                    this.$nextTick(() => this.controllaPromemoriaEventi());
+                }
+            },
+            calendarioFiltri: {
+                deep: true,
+                handler(value) {
+                    try { localStorage.setItem(CALENDAR_FILTERS_STORAGE_KEY, JSON.stringify(value)); } catch (e) { /* storage non disponibile */ }
+                }
+            },
+            calendarioSubView(valore) {
+                if (valore === 'giorno') this.scrollGiornoCalendario();
+            },
+            calendarioCursor() {
+                if (this.calendarioSubView === 'giorno') this.scrollGiornoCalendario();
             },
             currentUser(newUser) {
                 if (newUser && this.currentModule === 'territorio') {
@@ -2767,6 +3463,39 @@
                 snapshot.forEach(doc => loaded.push({ id: doc.id, ...doc.data() }));
                 this.budgets = loaded;
             }, (err) => { console.warn("Lettura bilanci_eventi in attesa o vuota", err); });
+
+            // Filtri di visibilità del calendario scelti dall'utente (mantenuti sul dispositivo)
+            try {
+                const salvati = JSON.parse(localStorage.getItem(CALENDAR_FILTERS_STORAGE_KEY) || 'null');
+                if (salvati && typeof salvati === 'object') {
+                    if (Array.isArray(salvati.calendari)) this.calendarioFiltri.calendari = salvati.calendari.filter(x => CALENDAR_SCOPES.some(c => c.id === x));
+                    if (Array.isArray(salvati.tipi)) this.calendarioFiltri.tipi = salvati.tipi.filter(x => CALENDAR_EVENT_TYPES.some(t => t.id === x));
+                    if (Array.isArray(salvati.destinatari)) this.calendarioFiltri.destinatari = salvati.destinatari.filter(x => CALENDAR_AUDIENCES.some(a => a.id === x));
+                    this.calendarioFiltri.soloPromemoria = salvati.soloPromemoria === true;
+                    this.calendarioFiltri.soloMiei = salvati.soloMiei === true;
+                }
+            } catch (e) { /* filtro non salvato */ }
+
+            onSnapshot(collection(db, "eventi_calendario"), (snapshot) => {
+                const loaded = [];
+                snapshot.forEach(doc => loaded.push({ id: doc.id, ...doc.data() }));
+                this.eventiCalendario = loaded;
+                // Apertura diretta da una notifica di promemoria: ./?evento=ID
+                if (!this.calendarDeepLinkHandled) {
+                    this.calendarDeepLinkHandled = true;
+                    try {
+                        const eventoId = new URLSearchParams(window.location.search).get('evento');
+                        const trovato = eventoId ? loaded.find(ev => ev.id === eventoId) : null;
+                        if (trovato) {
+                            this.currentModule = 'eventi';
+                            this.apriEventoCalendario(trovato);
+                        }
+                    } catch (e) { /* URL non valido */ }
+                }
+                this.$nextTick(() => this.controllaPromemoriaEventi());
+            }, (err) => { console.warn("Lettura eventi_calendario in attesa o vuota", err); });
+
+            this.reminderTimer = setInterval(() => this.controllaPromemoriaEventi(), 60000);
         },
         methods: {
             // La sezione e' attiva per questo tipo di utente? tipo = 'ospiti' (senza accesso) o 'utenti' (con accesso)
@@ -3654,6 +4383,482 @@
                     await deleteDoc(doc(db, "attivita_settori", id));
                 }
             },
+
+            /* ================= CALENDARIO ================= */
+            tipoEventoCalendario(typeId) {
+                return CALENDAR_EVENT_TYPES.find(t => t.id === typeId) || CALENDAR_EVENT_TYPES[CALENDAR_EVENT_TYPES.length - 1];
+            },
+            scopeEventoCalendario(scopeId) {
+                return CALENDAR_SCOPES.find(s => s.id === scopeId) || CALENDAR_SCOPES[0];
+            },
+            destinatarioCalendario(id) {
+                return CALENDAR_AUDIENCES.find(a => a.id === id) || { id, label: id };
+            },
+            stileEventoCalendario(ev) {
+                const t = this.tipoEventoCalendario(ev && ev.type);
+                return { backgroundColor: t.soft, borderColor: t.color, color: t.color };
+            },
+            stileScopeCalendario(scopeId) {
+                const s = this.scopeEventoCalendario(scopeId);
+                return { backgroundColor: s.soft, color: s.color, borderColor: s.color };
+            },
+            etichettaDestinatariEvento(ev) {
+                const audience = Array.isArray(ev && ev.audience) && ev.audience.length ? ev.audience : ['tutti'];
+                return audience.map(a => this.destinatarioCalendario(a).label).join(', ');
+            },
+            etichettaPromemoria(minuti) {
+                const m = Number(minuti);
+                if (!isFinite(m) || m <= 0) return "All'ora dell'evento";
+                if (m === 10080) return '1 settimana prima';
+                if (m === 2880) return '2 giorni prima';
+                if (m % 1440 === 0) return `${m / 1440} ${m / 1440 === 1 ? 'giorno' : 'giorni'} prima`;
+                if (m % 60 === 0) return `${m / 60} ${m / 60 === 1 ? 'ora' : 'ore'} prima`;
+                return `${m} minuti prima`;
+            },
+            formattaDataEstesa(key) {
+                const d = parseISODate(key);
+                const s = d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                return s.charAt(0).toUpperCase() + s.slice(1);
+            },
+            formattaDataBreve(key) {
+                return parseISODate(key).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+            },
+            giornoSettimanaBreve(key) {
+                const s = parseISODate(key).toLocaleDateString('it-IT', { weekday: 'short' });
+                return s.charAt(0).toUpperCase() + s.slice(1);
+            },
+            padOra(ora) { return `${pad2(ora)}:00`; },
+            formattaDataEvento(ev) {
+                if (!ev) return '';
+                const inizio = this.formattaDataEstesa(ev.startDate || oggiISO());
+                const fine = ev.endDate && ev.endDate !== ev.startDate ? this.formattaDataEstesa(ev.endDate) : '';
+                let s = fine ? `${inizio} – ${fine}` : inizio;
+                if (ev.allDay) return `${s} · Tutto il giorno`;
+                if (ev.startTime) s += ` · ${ev.startTime}${ev.endTime ? '–' + ev.endTime : ''}`;
+                return s;
+            },
+            etichettaEventoCalendario(ev) {
+                return `${ev.title || 'Evento'} · ${this.formattaDataEvento(ev)}`;
+            },
+            eventiCalendarioDelGiorno(key) {
+                return this.eventiCalendarioFiltrati.filter(ev => {
+                    const inizio = ev.startDate || ev.date;
+                    if (!inizio) return false;
+                    const fine = ev.endDate || inizio;
+                    return key >= inizio && key <= fine;
+                });
+            },
+            calendarioEventiAllOra(ora) {
+                return this.calendarioEventiGiorno.filter(ev => {
+                    if (ev.allDay || ev.startDate !== this.calendarioCursor) return false;
+                    const h = parseInt(String(ev.startTime || '0').slice(0, 2), 10);
+                    return h === ora;
+                });
+            },
+            calendarioSposta(delta) {
+                const d = parseISODate(this.calendarioCursor);
+                if (this.calendarioSubView === 'giorno') {
+                    d.setDate(d.getDate() + delta);
+                } else if (this.calendarioSubView === 'settimana') {
+                    d.setDate(d.getDate() + delta * 7);
+                } else {
+                    const giorno = d.getDate();
+                    d.setDate(1);
+                    d.setMonth(d.getMonth() + delta);
+                    const ultimo = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+                    d.setDate(Math.min(giorno, ultimo));
+                }
+                this.calendarioCursor = dataISO(d);
+            },
+            calendarioOggi() {
+                this.calendarioCursor = oggiISO();
+            },
+            scrollGiornoCalendario() {
+                this.$nextTick(() => {
+                    const el = document.getElementById('calendario-timeline-giorno');
+                    if (!el) return;
+                    let ora = 8;
+                    if (this.calendarioCursor === oggiISO()) ora = new Date().getHours();
+                    else {
+                        const primo = this.calendarioEventiGiorno.find(ev => !ev.allDay && ev.startTime);
+                        if (primo) ora = parseInt(String(primo.startTime).slice(0, 2), 10) || 8;
+                    }
+                    el.scrollTop = Math.max(0, (ora - 1) * 39);
+                });
+            },
+            calendarioImpostaVista(vista) {
+                this.calendarioSubView = vista;
+            },
+            calendarioApriGiorno(key) {
+                this.calendarioCursor = key;
+                this.calendarioSubView = 'giorno';
+            },
+            apriEventoCalendario(ev) {
+                this.selectedCalendarEvent = ev;
+            },
+            chiudiDettaglioEventoCalendario() {
+                this.selectedCalendarEvent = null;
+            },
+            openNewCalendarEvent(key) {
+                if (!this.currentUser) {
+                    this.showAuthModal = true;
+                    return;
+                }
+                const data = key || this.calendarioCursor || oggiISO();
+                const form = createEmptyCalendarEvent();
+                form.startDate = data;
+                form.endDate = data;
+                const adesso = new Date();
+                if (data === oggiISO() && adesso.getHours() >= 8 && adesso.getHours() <= 21) {
+                    form.startTime = `${pad2(adesso.getHours())}:00`;
+                    form.endTime = `${pad2(Math.min(23, adesso.getHours() + 2))}:00`;
+                }
+                this.calendarEventForm = form;
+                this.isEditingCalendarEvent = false;
+                this.editingCalendarEventId = null;
+                this.selectedCalendarEvent = null;
+                this.showCalendarEventModal = true;
+            },
+            modificaEventoCalendario(ev) {
+                if (!this.puoGestireEventoCalendario(ev)) return alert("Non hai i permessi per modificare questo evento.");
+                const startDate = ev.startDate || ev.date || oggiISO();
+                this.calendarEventForm = {
+                    title: ev.title || '',
+                    type: ev.type || 'altro',
+                    audience: Array.isArray(ev.audience) && ev.audience.length ? [...ev.audience] : ['tutti'],
+                    allDay: ev.allDay === true,
+                    startDate,
+                    endDate: ev.endDate || startDate,
+                    startTime: ev.startTime || '09:00',
+                    endTime: ev.endTime || '17:00',
+                    location: ev.location || '',
+                    description: ev.description || '',
+                    link: ev.link || '',
+                    scope: ev.scope || 'regionale',
+                    targetValue: ev.targetValue || '',
+                    reminder: {
+                        enabled: !!(ev.reminder && ev.reminder.enabled),
+                        minutesBefore: Number(ev.reminder && ev.reminder.minutesBefore) || 0
+                    }
+                };
+                this.isEditingCalendarEvent = true;
+                this.editingCalendarEventId = ev.id;
+                this.selectedCalendarEvent = null;
+                this.showCalendarEventModal = true;
+            },
+            chiudiModaleEventoCalendario() {
+                this.showCalendarEventModal = false;
+                this.isEditingCalendarEvent = false;
+                this.editingCalendarEventId = null;
+                this.calendarEventForm = createEmptyCalendarEvent();
+            },
+            impostaTargetCalendario() {
+                const f = this.calendarEventForm;
+                if (f.scope === 'zona') f.targetValue = (this.userProfile && this.userProfile.zona) || '';
+                else if (f.scope === 'gruppo') f.targetValue = (this.userProfile && this.userProfile.groupName) || '';
+                else f.targetValue = '';
+            },
+            toggleDestinatarioCalendario(id) {
+                const f = this.calendarEventForm;
+                if (!Array.isArray(f.audience)) f.audience = [];
+                if (id === 'tutti') {
+                    f.audience = ['tutti'];
+                    return;
+                }
+                f.audience = f.audience.filter(a => a !== 'tutti');
+                if (f.audience.includes(id)) f.audience = f.audience.filter(a => a !== id);
+                else f.audience.push(id);
+            },
+            resetFiltriCalendario() {
+                this.calendarioFiltri = {
+                    calendari: CALENDAR_SCOPES.map(c => c.id),
+                    tipi: CALENDAR_EVENT_TYPES.map(t => t.id),
+                    destinatari: CALENDAR_AUDIENCES.map(a => a.id),
+                    soloPromemoria: false,
+                    soloMiei: false
+                };
+                this.calendarioRicerca = '';
+            },
+            puoGestireEventoCalendario(ev) {
+                if (!ev || !this.currentUser) return false;
+                return this.isAdminOrSuper || (!!this.myEmail && ev.authorEmail === this.myEmail);
+            },
+            async salvaEventoCalendario() {
+                if (!this.currentUser) { this.showAuthModal = true; return; }
+                const f = this.calendarEventForm;
+                const titolo = String(f.title || '').trim();
+                if (!titolo) return alert('Inserisci il titolo dell\'evento.');
+                if (!f.type) return alert('Scegli la tipologia dell\'evento.');
+                if (!Array.isArray(f.audience) || f.audience.length === 0) return alert('Indica a chi è rivolto l\'evento.');
+                if (!f.startDate) return alert('Inserisci la data di inizio.');
+                const endDate = f.endDate || f.startDate;
+                if (endDate < f.startDate) return alert('La data di fine non può essere precedente alla data di inizio.');
+                if (!f.allDay) {
+                    if (!f.startTime || !f.endTime) return alert('Inserisci orario di inizio e fine, oppure seleziona "Tutto il giorno".');
+                    if (endDate === f.startDate && f.endTime < f.startTime) return alert('L\'orario di fine non può essere precedente all\'orario di inizio.');
+                }
+                if (f.scope === 'zona' && !f.targetValue) return alert('Seleziona la zona del calendario.');
+                if (f.scope === 'gruppo' && !f.targetValue) return alert('Seleziona il gruppo del calendario.');
+                const minutiPromemoria = Number(f.reminder && f.reminder.minutesBefore);
+                const payload = {
+                    title: titolo,
+                    description: String(f.description || '').trim().slice(0, 5000),
+                    type: f.type,
+                    audience: [...new Set((Array.isArray(f.audience) ? f.audience : []).filter(a => CALENDAR_AUDIENCES.some(x => x.id === a)))],
+                    allDay: !!f.allDay,
+                    startDate: f.startDate,
+                    endDate,
+                    startTime: f.allDay ? '' : f.startTime,
+                    endTime: f.allDay ? '' : f.endTime,
+                    location: String(f.location || '').trim().slice(0, 300),
+                    link: sanitizzaUrl(f.link),
+                    scope: f.scope || 'regionale',
+                    targetValue: f.scope === 'regionale' ? '' : String(f.targetValue || '').trim().slice(0, 200),
+                    reminder: {
+                        enabled: !!(f.reminder && f.reminder.enabled),
+                        minutesBefore: isFinite(minutiPromemoria) ? Math.max(0, minutiPromemoria) : 0
+                    },
+                    updatedAt: new Date().toISOString()
+                };
+                try {
+                    if (this.isEditingCalendarEvent && this.editingCalendarEventId) {
+                        await updateDoc(doc(db, 'eventi_calendario', this.editingCalendarEventId), payload);
+                        this.mostraToastCalendario('Evento aggiornato nel calendario.');
+                    } else {
+                        await addDoc(collection(db, 'eventi_calendario'), {
+                            ...payload,
+                            authorEmail: this.myEmail,
+                            authorUid: this.currentUser.uid,
+                            authorName: this.myDisplayName || '',
+                            createdAt: new Date().toISOString()
+                        });
+                        this.mostraToastCalendario('Evento pubblicato nel calendario.');
+                    }
+                    if (payload.reminder.enabled && this.notificationPermission !== 'granted') {
+                        this.mostraToastCalendario('Evento salvato. Attiva le notifiche per ricevere il promemoria.');
+                    }
+                    this.chiudiModaleEventoCalendario();
+                } catch (e) {
+                    alert('Errore nel salvataggio dell\'evento: ' + e.message);
+                }
+            },
+            async eliminaEventoCalendario(ev) {
+                if (!ev || !this.puoGestireEventoCalendario(ev)) return alert('Non hai i permessi per eliminare questo evento.');
+                if (!confirm('Eliminare definitivamente questo evento dal calendario?')) return;
+                try {
+                    await deleteDoc(doc(db, 'eventi_calendario', ev.id));
+                    if (this.selectedCalendarEvent && this.selectedCalendarEvent.id === ev.id) this.selectedCalendarEvent = null;
+                    this.mostraToastCalendario('Evento eliminato dal calendario.');
+                } catch (e) {
+                    alert('Errore: ' + e.message);
+                }
+            },
+            timestampInizioEvento(ev) {
+                const data = ev.startDate || ev.date;
+                if (!data) return NaN;
+                const d = parseISODate(data);
+                const orario = ev.allDay ? '09:00' : (ev.startTime || '09:00');
+                const parti = String(orario).split(':').map(Number);
+                d.setHours(isFinite(parti[0]) ? parti[0] : 9, isFinite(parti[1]) ? parti[1] : 0, 0, 0);
+                return d.getTime();
+            },
+            googleCalendarUrl(ev) {
+                const startDate = ev.startDate || ev.date || oggiISO();
+                const endDate = ev.endDate || startDate;
+                let dates;
+                if (ev.allDay) {
+                    dates = `${startDate.replace(/-/g, '')}/${aggiungiGiorniISO(endDate, 1).replace(/-/g, '')}`;
+                } else {
+                    const oraInizio = (ev.startTime || '09:00').replace(':', '') + '00';
+                    const oraFine = (ev.endTime || ev.startTime || '10:00').replace(':', '') + '00';
+                    dates = `${startDate.replace(/-/g, '')}T${oraInizio}/${endDate.replace(/-/g, '')}T${oraFine}`;
+                }
+                const dettagli = [
+                    ev.description || '',
+                    'Tipologia: ' + this.tipoEventoCalendario(ev.type).label,
+                    'A chi è rivolto: ' + this.etichettaDestinatariEvento(ev),
+                    ev.reminder && ev.reminder.enabled ? 'Promemoria app: ' + this.etichettaPromemoria(ev.reminder.minutesBefore) : '',
+                    ev.authorName ? 'Organizza: ' + ev.authorName : ''
+                ].filter(Boolean).join('\n');
+                const params = new URLSearchParams({
+                    action: 'TEMPLATE',
+                    text: ev.title || 'Evento Agesci Marche',
+                    dates,
+                    details: dettagli,
+                    location: ev.location || ''
+                });
+                return 'https://calendar.google.com/calendar/render?' + params.toString();
+            },
+            _icsEscape(valore) {
+                return String(valore == null ? '' : valore)
+                    .replace(/\\/g, '\\\\')
+                    .replace(/\r?\n/g, '\\n')
+                    .replace(/,/g, '\\,')
+                    .replace(/;/g, '\\;');
+            },
+            _icsFold(linea) {
+                const testo = String(linea);
+                if (testo.length <= 73) return testo;
+                const pezzi = [];
+                for (let i = 0; i < testo.length; i += 73) pezzi.push(testo.slice(i, i + 73));
+                return pezzi.join('\r\n ');
+            },
+            _icsDataOra(dataKey, orario) {
+                return `${String(dataKey).replace(/-/g, '')}T${String(orario || '09:00').replace(':', '')}00`;
+            },
+            _icsTimestampUTC() {
+                const d = new Date();
+                return `${d.getUTCFullYear()}${pad2(d.getUTCMonth() + 1)}${pad2(d.getUTCDate())}T${pad2(d.getUTCHours())}${pad2(d.getUTCMinutes())}${pad2(d.getUTCSeconds())}Z`;
+            },
+            generaICS(eventi, nomeFile) {
+                const lines = [
+                    'BEGIN:VCALENDAR',
+                    'VERSION:2.0',
+                    'PRODID:-//AGESCI Marche//Calendario//IT',
+                    'CALSCALE:GREGORIAN',
+                    'METHOD:PUBLISH',
+                    'X-WR-CALNAME:AGESCI Marche - Calendario'
+                ];
+                const dtstamp = this._icsTimestampUTC();
+                (eventi || []).forEach(ev => {
+                    const startDate = ev.startDate || ev.date || oggiISO();
+                    const endDate = ev.endDate || startDate;
+                    lines.push('BEGIN:VEVENT');
+                    lines.push(`UID:${this._icsEscape((ev.id || (ev.title + startDate).replace(/\s+/g, '-')) + '@agesci-marche')}`);
+                    lines.push(`DTSTAMP:${dtstamp}`);
+                    if (ev.allDay) {
+                        lines.push(`DTSTART;VALUE=DATE:${String(startDate).replace(/-/g, '')}`);
+                        lines.push(`DTEND;VALUE=DATE:${aggiungiGiorniISO(endDate, 1).replace(/-/g, '')}`);
+                    } else {
+                        lines.push(`DTSTART:${this._icsDataOra(startDate, ev.startTime)}`);
+                        lines.push(`DTEND:${this._icsDataOra(endDate, ev.endTime || ev.startTime)}`);
+                    }
+                    lines.push(this._icsFold(`SUMMARY:${this._icsEscape(ev.title || 'Evento')}`));
+                    const descrizione = [
+                        ev.description || '',
+                        'Tipologia: ' + this.tipoEventoCalendario(ev.type).label,
+                        'A chi è rivolto: ' + this.etichettaDestinatariEvento(ev),
+                        ev.authorName ? 'Organizza: ' + ev.authorName : ''
+                    ].filter(Boolean).join('\n');
+                    if (descrizione) lines.push(this._icsFold(`DESCRIPTION:${this._icsEscape(descrizione)}`));
+                    if (ev.location) lines.push(this._icsFold(`LOCATION:${this._icsEscape(ev.location)}`));
+                    if (ev.link) lines.push(this._icsFold(`URL:${this._icsEscape(ev.link)}`));
+                    if (ev.reminder && ev.reminder.enabled) {
+                        const minuti = Math.max(0, Number(ev.reminder.minutesBefore) || 0);
+                        lines.push('BEGIN:VALARM');
+                        lines.push('ACTION:DISPLAY');
+                        lines.push(this._icsFold(`DESCRIPTION:${this._icsEscape('Promemoria: ' + (ev.title || 'Evento'))}`));
+                        lines.push(`TRIGGER:-PT${minuti}M`);
+                        lines.push('END:VALARM');
+                    }
+                    lines.push('END:VEVENT');
+                });
+                lines.push('END:VCALENDAR');
+                const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = nomeFile || 'calendario-agesci-marche.ics';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 2000);
+            },
+            scaricaEventoICS(ev) {
+                if (!ev) return;
+                const nome = 'evento-' + String(ev.title || 'agesci').trim().replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 60) + '.ics';
+                this.generaICS([ev], nome);
+                this.mostraToastCalendario('File .ics pronto: aprilo per aggiungerlo al calendario personale.');
+            },
+            scaricaCalendarioICS() {
+                const oggi = oggiISO();
+                const eventi = this.eventiCalendarioFiltrati.filter(ev => (ev.endDate || ev.startDate) >= oggi);
+                if (!eventi.length) return alert('Non ci sono eventi futuri visibili da esportare con i filtri attuali.');
+                this.generaICS(eventi, 'calendario-agesci-marche.ics');
+                this.mostraToastCalendario('Calendario esportato: importa il file .ics in Google Calendar, Apple Calendario o Outlook.');
+            },
+            async richiediPermessoNotifiche() {
+                if (!('Notification' in window)) {
+                    this.notificationPermission = 'unsupported';
+                    return alert('Questo browser non supporta le notifiche. Prova ad aggiungere l\'app alla schermata Home oppure usa un browser aggiornato.');
+                }
+                try {
+                    const esito = await Notification.requestPermission();
+                    this.notificationPermission = esito;
+                    if (esito === 'granted') {
+                        this.mostraToastCalendario('Notifiche attivate: riceverai i promemoria degli eventi.');
+                        this.controllaPromemoriaEventi();
+                    } else if (esito === 'denied') {
+                        alert('Le notifiche sono bloccate. Per riattivarle, apri le impostazioni del browser per questo sito e consenti le notifiche.');
+                    }
+                } catch (e) {
+                    alert('Impossibile attivare le notifiche: ' + e.message);
+                }
+            },
+            mostraNotificaEvento(ev) {
+                const titolo = 'Promemoria: ' + (ev.title || 'Evento Agesci');
+                const corpo = [
+                    this.formattaDataEvento(ev),
+                    ev.location ? '📍 ' + ev.location : '',
+                    this.tipoEventoCalendario(ev.type).label
+                ].filter(Boolean).join('\n');
+                const options = {
+                    body: corpo,
+                    icon: 'assets/logo.png',
+                    badge: 'assets/logo.png',
+                    tag: 'evento-' + (ev.id || ev.startDate || ''),
+                    data: { url: './?evento=' + encodeURIComponent(ev.id || '') }
+                };
+                const fallback = () => {
+                    try { new Notification(titolo, options); } catch (e) { /* notifiche non disponibili */ }
+                };
+                if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+                    navigator.serviceWorker.ready
+                        .then(reg => reg.showNotification(titolo, options))
+                        .catch(fallback);
+                } else {
+                    fallback();
+                }
+                this.mostraToastCalendario('🔔 ' + titolo);
+            },
+            mostraToastCalendario(messaggio) {
+                this.calendarioToast = messaggio;
+                if (this.calendarioToastTimer) clearTimeout(this.calendarioToastTimer);
+                this.calendarioToastTimer = setTimeout(() => { this.calendarioToast = ''; }, 7000);
+            },
+            controllaPromemoriaEventi() {
+                const permesso = permessoNotificheAttuale();
+                if (permesso !== this.notificationPermission) this.notificationPermission = permesso;
+                if (permesso !== 'granted') return;
+                const adesso = Date.now();
+                let notificati = {};
+                try { notificati = JSON.parse(localStorage.getItem(CALENDAR_NOTIFY_STORAGE_KEY) || '{}') || {}; } catch (e) { notificati = {}; }
+                const aggiornati = {};
+                Object.keys(notificati).forEach(k => {
+                    const quando = Number(notificati[k]);
+                    if (isFinite(quando) && adesso - quando < 45 * 86400000) aggiornati[k] = quando;
+                });
+                let cambiato = false;
+                this.eventiCalendario.forEach(ev => {
+                    const promemoria = ev.reminder;
+                    if (!promemoria || promemoria.enabled !== true) return;
+                    const inizio = this.timestampInizioEvento(ev);
+                    if (!isFinite(inizio)) return;
+                    const minuti = Math.max(0, Number(promemoria.minutesBefore) || 0);
+                    const quandoAvvisare = inizio - minuti * 60000;
+                    // Finestra di tolleranza: dal momento del promemoria fino a 12 ore dopo l'inizio.
+                    if (adesso < quandoAvvisare || adesso > inizio + 12 * 3600000) return;
+                    const chiave = `${ev.id || (ev.title + '|' + ev.startDate)}|${ev.startDate}|${ev.startTime || 'all-day'}|${minuti}`;
+                    if (aggiornati[chiave]) return;
+                    aggiornati[chiave] = adesso;
+                    cambiato = true;
+                    this.mostraNotificaEvento(ev);
+                });
+                if (cambiato || Object.keys(aggiornati).length !== Object.keys(notificati).length) {
+                    try { localStorage.setItem(CALENDAR_NOTIFY_STORAGE_KEY, JSON.stringify(aggiornati)); } catch (e) { /* storage non disponibile */ }
+                }
+            },
+
             addPreventivoRow() { this.newBudget.preventivo.push({ categoria: this.expenseCategories[0], importo: 0, descrizione: '' }); },
             removePreventivoRow(i) { this.newBudget.preventivo.splice(i, 1); },
             addConsuntivoRow() { this.newBudget.consuntivo.push({ categoria: this.expenseCategories[0], data: '', importo: 0, descrizione: '' }); },
@@ -4036,6 +5241,10 @@
             async logout() {
                 await signOut(auth);
             }
+        },
+        beforeUnmount() {
+            if (this.reminderTimer) clearInterval(this.reminderTimer);
+            if (this.calendarioToastTimer) clearTimeout(this.calendarioToastTimer);
         }
     }).mount('#app');
 </script>
