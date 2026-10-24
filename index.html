@@ -1555,14 +1555,21 @@
                         </div>
                     </div>
 
-                    <div v-if="calendarEventForm.scope === 'zona'">
+                    <div v-if="isAdminOrSuper" class="bg-gray-50 border border-gray-200 rounded-xl p-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <p class="text-[10px] text-gray-500"><i class="fa-solid fa-gear text-agesci-purple mr-1"></i>Come amministratore puoi personalizzare le tipologie di evento e i calendari preimpostati.</p>
+                        <button type="button" @click="apriImpostazioniCalendario" class="border border-agesci-purple text-agesci-purple rounded-lg px-3 py-1.5 font-bold hover:bg-purple-50 transition shrink-0">
+                            <i class="fa-solid fa-sliders mr-1"></i>Impostazioni calendario
+                        </button>
+                    </div>
+
+                    <div v-if="scopeEventoCalendario(calendarEventForm.scope).target === 'zona'">
                         <label class="block font-bold mb-1">Zona *</label>
                         <select v-model="calendarEventForm.targetValue" class="w-full border rounded-xl p-2.5 bg-white">
                             <option value="" disabled>Seleziona la zona...</option>
                             <option v-for="z in adminZonesList" :key="z.name" :value="z.name">{{ z.name }}</option>
                         </select>
                     </div>
-                    <div v-if="calendarEventForm.scope === 'gruppo'">
+                    <div v-if="scopeEventoCalendario(calendarEventForm.scope).target === 'gruppo'">
                         <label class="block font-bold mb-1">Gruppo *</label>
                         <select v-model="calendarEventForm.targetValue" class="w-full border rounded-xl p-2.5 bg-white">
                             <option value="" disabled>Seleziona il gruppo...</option>
@@ -1571,14 +1578,17 @@
                     </div>
 
                     <div>
-                        <label class="block font-bold mb-1">A chi è rivolto *</label>
-                        <div class="flex flex-wrap gap-1.5">
-                            <label v-for="a in calendarAudiences" :key="a.id" class="cursor-pointer">
-                                <input type="checkbox" class="hidden" :checked="calendarEventForm.audience.includes(a.id)" @change="toggleDestinatarioCalendario(a.id)">
-                                <span class="inline-block border rounded-full px-3 py-1.5 font-semibold transition" :class="calendarEventForm.audience.includes(a.id) ? 'bg-agesci-purple text-white border-agesci-purple' : 'bg-white text-gray-600 border-gray-200 hover:border-agesci-purple'">{{ a.label }}</span>
-                            </label>
+                        <div class="flex items-center justify-between gap-2 mb-1">
+                            <label class="block font-bold">A chi è rivolto</label>
+                            <span class="text-[9px] uppercase font-bold bg-gray-100 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full"><i class="fa-solid fa-lock mr-1"></i>In attesa di aggiornamento</span>
                         </div>
-                        <p class="text-[10px] text-gray-400 mt-1">Puoi selezionare più destinatari (es. Capi e Rover/Scolte).</p>
+                        <div class="rounded-xl border border-gray-200 bg-gray-100 p-3 text-gray-500 flex items-start gap-2">
+                            <i class="fa-solid fa-lock mt-0.5"></i>
+                            <div>
+                                <p class="font-semibold text-gray-600">Sezione temporaneamente bloccata</p>
+                                <p class="text-[10px] leading-relaxed">Per ora l'evento è rivolto a <strong>{{ etichettaDestinatariEvento(calendarEventForm) }}</strong>. La selezione dei destinatari sarà disponibile in un prossimo aggiornamento.</p>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1696,6 +1706,82 @@
                     </div>
 
                     <p class="text-[10px] text-gray-400">Suggerimento: dopo aver scaricato il file .ics, aprilo e conferma l'importazione nel tuo calendario personale. Gli eventi con promemoria includono anche l'avviso nel calendario.</p>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- MODALE IMPOSTAZIONI CALENDARIO (ADMIN) -->
+        <div v-if="showCalendarSettingsModal" class="fixed inset-0 z-[3200] flex items-end md:items-center justify-center p-0 md:p-4">
+            <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="chiudiImpostazioniCalendario"></div>
+            <div class="relative w-full md:w-[700px] max-h-[94vh] bg-white rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up text-xs">
+                <div class="bg-agesci-dark text-white px-5 py-4 flex justify-between items-center shrink-0">
+                    <div>
+                        <p class="text-[9px] uppercase tracking-widest font-bold text-agesci-yellow">Admin · Calendario</p>
+                        <h3 class="text-lg font-bold">Impostazioni calendario</h3>
+                        <p class="text-[10px] text-agesci-lavender">Personalizza le tipologie di evento e i calendari preimpostati per tutti gli utenti.</p>
+                    </div>
+                    <button @click="chiudiImpostazioniCalendario" class="bg-white/10 hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center transition shrink-0"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div class="flex gap-1 bg-gray-100 p-1 m-4 mb-0 rounded-xl w-fit">
+                    <button type="button" @click="calendarSettingsTab = 'tipologie'" :class="calendarSettingsTab === 'tipologie' ? 'bg-white shadow font-bold text-agesci-dark' : 'text-gray-500'" class="px-3 py-1.5 rounded-lg transition"><i class="fa-solid fa-tags mr-1"></i>Tipologie</button>
+                    <button type="button" @click="calendarSettingsTab = 'calendari'" :class="calendarSettingsTab === 'calendari' ? 'bg-white shadow font-bold text-agesci-dark' : 'text-gray-500'" class="px-3 py-1.5 rounded-lg transition"><i class="fa-solid fa-layer-group mr-1"></i>Calendari</button>
+                </div>
+
+                <div class="p-5 overflow-y-auto flex-grow space-y-4">
+                    <template v-if="calendarSettingsTab === 'tipologie'">
+                        <p class="text-[11px] text-gray-500">Queste tipologie compaiono nel form di creazione evento e nei filtri del calendario. Rinominarle o cambiarne il colore aggiorna anche gli eventi già esistenti.</p>
+                        <div class="space-y-2">
+                            <div v-for="(t, i) in calendarTypesDraft" :key="'tipo-' + i" class="flex items-center gap-2 bg-gray-50 border rounded-xl p-2">
+                                <input v-model="t.color" type="color" class="w-9 h-9 rounded-lg border border-gray-200 bg-white p-0.5 cursor-pointer shrink-0" title="Colore della tipologia">
+                                <input v-model="t.label" type="text" maxlength="60" class="flex-grow border rounded-lg p-2 bg-white" placeholder="Nome tipologia">
+                                <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: t.color }"></span>
+                                <button type="button" @click="rimuoviTipologiaCalendario(i)" class="text-red-500 hover:text-red-700 px-2 py-1 shrink-0" title="Elimina tipologia"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <button type="button" @click="aggiungiTipologiaCalendario" class="text-agesci-purple font-bold hover:underline"><i class="fa-solid fa-plus mr-1"></i>Aggiungi tipologia</button>
+                    </template>
+
+                    <template v-else>
+                        <p class="text-[11px] text-gray-500">I calendari preimpostati sono le voci selezionabili nel form evento e nella colonna “Calendari visibili” dei filtri. Per ogni calendario puoi indicare se richiede una zona o un gruppo.</p>
+                        <div class="space-y-2">
+                            <div v-for="(c, i) in calendarCalendarsDraft" :key="'cal-' + i" class="bg-gray-50 border rounded-xl p-2 space-y-2">
+                                <div class="flex items-center gap-2">
+                                    <input v-model="c.color" type="color" class="w-9 h-9 rounded-lg border border-gray-200 bg-white p-0.5 cursor-pointer shrink-0" title="Colore del calendario">
+                                    <input v-model="c.label" type="text" maxlength="80" class="flex-grow border rounded-lg p-2 bg-white" placeholder="Nome calendario">
+                                    <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: c.color }"></span>
+                                    <button type="button" @click="rimuoviCalendarioPreimpostato(i)" class="text-red-500 hover:text-red-700 px-2 py-1 shrink-0" title="Elimina calendario"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                                <div class="flex items-center gap-2 pl-11">
+                                    <label class="text-[10px] text-gray-500 shrink-0">Richiede:</label>
+                                    <select v-model="c.target" class="border rounded-lg p-1.5 bg-white text-[11px] flex-grow">
+                                        <option value="none">Nessuna selezione aggiuntiva</option>
+                                        <option value="zona">Selezione della zona</option>
+                                        <option value="gruppo">Selezione del gruppo</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" @click="aggiungiCalendarioPreimpostato" class="text-agesci-purple font-bold hover:underline"><i class="fa-solid fa-plus mr-1"></i>Aggiungi calendario</button>
+                    </template>
+
+                    <div class="bg-gray-100 border border-gray-200 rounded-2xl p-3">
+                        <div class="flex items-center justify-between gap-2">
+                            <p class="font-bold text-gray-600"><i class="fa-solid fa-users mr-1"></i>A chi è rivolto</p>
+                            <span class="text-[9px] uppercase font-bold bg-white text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full"><i class="fa-solid fa-lock mr-1"></i>Bloccato</span>
+                        </div>
+                        <p class="text-[10px] text-gray-500 mt-1">Sezione temporaneamente bloccata in attesa di aggiornamento. I nuovi eventi restano visibili a <strong>Tutti</strong>; gli eventi esistenti mantengono i destinatari già salvati.</p>
+                    </div>
+
+                    <p class="text-[10px] text-gray-400">Le modifiche saranno applicate a tutti gli utenti dell’app. Non è possibile eliminare una tipologia o un calendario già utilizzato da eventi esistenti.</p>
+                </div>
+
+                <div class="px-5 py-3 border-t bg-gray-50 flex justify-end gap-2 shrink-0">
+                    <button type="button" @click="chiudiImpostazioniCalendario" class="px-4 py-2 border rounded-xl font-bold bg-white">Annulla</button>
+                    <button type="button" @click="salvaImpostazioniCalendario" :disabled="calendarSettingsSaving" class="bg-agesci-dark text-white px-5 py-2 rounded-xl font-bold shadow hover:bg-agesci-purple transition disabled:opacity-50">
+                        {{ calendarSettingsSaving ? 'Salvataggio...' : 'Salva impostazioni' }}
+                    </button>
                 </div>
             </div>
         </div>
@@ -2658,9 +2744,9 @@
         { id: 'zone', label: 'Zone' }
     ];
     const CALENDAR_SCOPES = [
-        { id: 'regionale', label: 'Calendario regionale', color: '#462678', soft: '#EDE7F5' },
-        { id: 'zona', label: 'Calendario di zona', color: '#21A067', soft: '#E6F6EE' },
-        { id: 'gruppo', label: 'Calendario di gruppo', color: '#2563EB', soft: '#DBEAFE' }
+        { id: 'regionale', label: 'Calendario regionale', color: '#462678', target: 'none' },
+        { id: 'zona', label: 'Calendario di zona', color: '#21A067', target: 'zona' },
+        { id: 'gruppo', label: 'Calendario di gruppo', color: '#2563EB', target: 'gruppo' }
     ];
     const CALENDAR_REMINDER_OPTIONS = [
         { value: 0, label: "All'ora dell'evento" },
@@ -2697,6 +2783,71 @@
     }
     function permessoNotificheAttuale() {
         return (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
+    }
+    function clonaConfigCalendario(valore) {
+        return JSON.parse(JSON.stringify(valore || []));
+    }
+    function coloreHexValido(valore, predefinito) {
+        return /^#[0-9a-f]{6}$/i.test(String(valore || '')) ? String(valore) : predefinito;
+    }
+    // Sfondo tenue ricavato dal colore scelto, così anche i colori personalizzati restano leggibili.
+    function coloreTenue(hex, alpha = 0.14) {
+        const h = String(coloreHexValido(hex, '#462678')).replace('#', '');
+        const r = parseInt(h.slice(0, 2), 16);
+        const g = parseInt(h.slice(2, 4), 16);
+        const b = parseInt(h.slice(4, 6), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    function slugConfigCalendario(testo, predefinito) {
+        return normalizzaTesto(testo).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || predefinito;
+    }
+    // Le tipologie sono modificabili dall'admin. Il formato salvato è { id, label, color }.
+    function normalizzaTipologieEvento(raw) {
+        const base = (Array.isArray(raw) && raw.length) ? raw : CALENDAR_EVENT_TYPES;
+        const usati = new Set();
+        const out = [];
+        base.slice(0, 40).forEach((item, indice) => {
+            item = item || {};
+            const label = String(item.label || '').trim().slice(0, 60);
+            if (!label) return;
+            let id = slugConfigCalendario(item.id, slugConfigCalendario(label, 'tipologia'));
+            const idBase = id;
+            let n = 2;
+            while (usati.has(id)) { id = `${idBase}-${n}`; n++; }
+            usati.add(id);
+            out.push({ id, label, color: coloreHexValido(item.color, indice === 0 ? '#462678' : '#6B7280') });
+        });
+        if (!out.length) {
+            return CALENDAR_EVENT_TYPES.map(t => ({ id: t.id, label: t.label, color: t.color }));
+        }
+        return out;
+    }
+    // I calendari preimpostati possono essere rinominati, colorati o estesi dall'admin.
+    // target: 'none' | 'zona' | 'gruppo' — indica quale campo aggiuntivo mostrare nel form.
+    function normalizzaCalendariEvento(raw) {
+        const base = (Array.isArray(raw) && raw.length) ? raw : CALENDAR_SCOPES;
+        const usati = new Set();
+        const out = [];
+        base.slice(0, 20).forEach((item, indice) => {
+            item = item || {};
+            const label = String(item.label || '').trim().slice(0, 80);
+            if (!label) return;
+            let id = slugConfigCalendario(item.id, slugConfigCalendario(label, 'calendario'));
+            const idBase = id;
+            let n = 2;
+            while (usati.has(id)) { id = `${idBase}-${n}`; n++; }
+            usati.add(id);
+            let target = ['none', 'zona', 'gruppo'].includes(item.target) ? item.target : 'none';
+            if (!item.target) {
+                if (id === 'zona') target = 'zona';
+                else if (id === 'gruppo') target = 'gruppo';
+            }
+            out.push({ id, label, color: coloreHexValido(item.color, ['#462678', '#21A067', '#2563EB'][indice % 3]), target });
+        });
+        if (!out.length) {
+            return CALENDAR_SCOPES.map(c => ({ id: c.id, label: c.label, color: c.color, target: c.target }));
+        }
+        return out;
     }
     function createEmptyCalendarEvent() {
         const today = oggiISO();
@@ -2893,12 +3044,17 @@
                     soloMiei: false
                 },
                 calendarioRicerca: '',
-                calendarEventTypes: CALENDAR_EVENT_TYPES,
+                calendarEventTypes: clonaConfigCalendario(CALENDAR_EVENT_TYPES),
                 calendarAudiences: CALENDAR_AUDIENCES,
-                calendarScopes: CALENDAR_SCOPES,
+                calendarScopes: clonaConfigCalendario(CALENDAR_SCOPES),
                 calendarReminderOptions: CALENDAR_REMINDER_OPTIONS,
                 showCalendarEventModal: false,
                 showCalendarImportModal: false,
+                showCalendarSettingsModal: false,
+                calendarSettingsTab: 'tipologie',
+                calendarTypesDraft: [],
+                calendarCalendarsDraft: [],
+                calendarSettingsSaving: false,
                 isEditingCalendarEvent: false,
                 editingCalendarEventId: null,
                 calendarEventForm: createEmptyCalendarEvent(),
@@ -3219,8 +3375,8 @@
             calendarioFiltriAttiviCount() {
                 const f = this.calendarioFiltri;
                 let n = 0;
-                if (!f.calendari.length || f.calendari.length !== CALENDAR_SCOPES.length) n++;
-                if (!f.tipi.length || f.tipi.length !== CALENDAR_EVENT_TYPES.length) n++;
+                if (!f.calendari.length || f.calendari.length !== this.calendarScopes.length) n++;
+                if (!f.tipi.length || f.tipi.length !== this.calendarEventTypes.length) n++;
                 if (!f.destinatari.length || f.destinatari.length !== CALENDAR_AUDIENCES.length) n++;
                 if (f.soloPromemoria) n++;
                 if (f.soloMiei) n++;
@@ -3407,6 +3563,12 @@
                 this.impostazioni = nuove;
             }, (err) => { console.warn("Lettura settings in attesa o non riuscita: valgono le impostazioni predefinite", err); });
 
+            // Impostazioni del calendario modificabili dagli admin (tipologie e calendari preimpostati)
+            onSnapshot(doc(db, "calendario_impostazioni", "config"), (snap) => {
+                const d = snap.exists() ? snap.data() : {};
+                this.applicaImpostazioniCalendario(d.tipologie, d.calendari);
+            }, (err) => { console.warn("Lettura calendario_impostazioni in attesa o non riuscita: valgono i valori predefiniti", err); });
+
             onSnapshot(collection(db, "zone_gruppi"), (snapshot) => {
                 const loaded = [];
                 snapshot.forEach(doc => loaded.push({ id: doc.id, ...doc.data() }));
@@ -3468,8 +3630,8 @@
             try {
                 const salvati = JSON.parse(localStorage.getItem(CALENDAR_FILTERS_STORAGE_KEY) || 'null');
                 if (salvati && typeof salvati === 'object') {
-                    if (Array.isArray(salvati.calendari)) this.calendarioFiltri.calendari = salvati.calendari.filter(x => CALENDAR_SCOPES.some(c => c.id === x));
-                    if (Array.isArray(salvati.tipi)) this.calendarioFiltri.tipi = salvati.tipi.filter(x => CALENDAR_EVENT_TYPES.some(t => t.id === x));
+                    if (Array.isArray(salvati.calendari)) this.calendarioFiltri.calendari = salvati.calendari.filter(x => typeof x === 'string');
+                    if (Array.isArray(salvati.tipi)) this.calendarioFiltri.tipi = salvati.tipi.filter(x => typeof x === 'string');
                     if (Array.isArray(salvati.destinatari)) this.calendarioFiltri.destinatari = salvati.destinatari.filter(x => CALENDAR_AUDIENCES.some(a => a.id === x));
                     this.calendarioFiltri.soloPromemoria = salvati.soloPromemoria === true;
                     this.calendarioFiltri.soloMiei = salvati.soloMiei === true;
@@ -4386,21 +4548,23 @@
 
             /* ================= CALENDARIO ================= */
             tipoEventoCalendario(typeId) {
-                return CALENDAR_EVENT_TYPES.find(t => t.id === typeId) || CALENDAR_EVENT_TYPES[CALENDAR_EVENT_TYPES.length - 1];
+                const trovato = this.calendarEventTypes.find(t => t.id === typeId);
+                return trovato || { id: typeId || 'altro', label: 'Tipologia non disponibile', color: '#6B7280' };
             },
             scopeEventoCalendario(scopeId) {
-                return CALENDAR_SCOPES.find(s => s.id === scopeId) || CALENDAR_SCOPES[0];
+                const trovato = this.calendarScopes.find(s => s.id === scopeId);
+                return trovato || { id: scopeId || '', label: 'Calendario', color: '#462678', target: 'none' };
             },
             destinatarioCalendario(id) {
                 return CALENDAR_AUDIENCES.find(a => a.id === id) || { id, label: id };
             },
             stileEventoCalendario(ev) {
                 const t = this.tipoEventoCalendario(ev && ev.type);
-                return { backgroundColor: t.soft, borderColor: t.color, color: t.color };
+                return { backgroundColor: coloreTenue(t.color), borderColor: t.color, color: t.color };
             },
             stileScopeCalendario(scopeId) {
                 const s = this.scopeEventoCalendario(scopeId);
-                return { backgroundColor: s.soft, color: s.color, borderColor: s.color };
+                return { backgroundColor: coloreTenue(s.color), color: s.color, borderColor: s.color };
             },
             etichettaDestinatariEvento(ev) {
                 const audience = Array.isArray(ev && ev.audience) && ev.audience.length ? ev.audience : ['tutti'];
@@ -4506,6 +4670,8 @@
                 }
                 const data = key || this.calendarioCursor || oggiISO();
                 const form = createEmptyCalendarEvent();
+                form.type = this.calendarEventTypes[0] ? this.calendarEventTypes[0].id : 'altro';
+                form.scope = this.calendarScopes[0] ? this.calendarScopes[0].id : 'regionale';
                 form.startDate = data;
                 form.endDate = data;
                 const adesso = new Date();
@@ -4514,6 +4680,7 @@
                     form.endTime = `${pad2(Math.min(23, adesso.getHours() + 2))}:00`;
                 }
                 this.calendarEventForm = form;
+                this.impostaTargetCalendario();
                 this.isEditingCalendarEvent = false;
                 this.editingCalendarEventId = null;
                 this.selectedCalendarEvent = null;
@@ -4554,9 +4721,103 @@
             },
             impostaTargetCalendario() {
                 const f = this.calendarEventForm;
-                if (f.scope === 'zona') f.targetValue = (this.userProfile && this.userProfile.zona) || '';
-                else if (f.scope === 'gruppo') f.targetValue = (this.userProfile && this.userProfile.groupName) || '';
+                const scope = this.scopeEventoCalendario(f.scope);
+                if (scope.target === 'zona') f.targetValue = (this.userProfile && this.userProfile.zona) || '';
+                else if (scope.target === 'gruppo') f.targetValue = (this.userProfile && this.userProfile.groupName) || '';
                 else f.targetValue = '';
+            },
+            applicaImpostazioniCalendario(tipiRaw, calendariRaw) {
+                const vecchiTipi = this.calendarEventTypes.map(t => t.id);
+                const vecchiCalendari = this.calendarScopes.map(c => c.id);
+                const tipi = normalizzaTipologieEvento(tipiRaw);
+                const calendari = normalizzaCalendariEvento(calendariRaw);
+                this.calendarEventTypes = tipi;
+                this.calendarScopes = calendari;
+
+                const f = this.calendarioFiltri;
+                const tipiTuttiVisibili = vecchiTipi.length > 0 && vecchiTipi.every(id => f.tipi.includes(id));
+                const calendariTuttiVisibili = vecchiCalendari.length > 0 && vecchiCalendari.every(id => f.calendari.includes(id));
+                f.tipi = tipiTuttiVisibili ? tipi.map(t => t.id) : f.tipi.filter(id => tipi.some(t => t.id === id));
+                f.calendari = calendariTuttiVisibili ? calendari.map(c => c.id) : f.calendari.filter(id => calendari.some(c => c.id === id));
+
+                if (this.calendarEventForm && !tipi.some(t => t.id === this.calendarEventForm.type)) {
+                    this.calendarEventForm.type = tipi[0] ? tipi[0].id : '';
+                }
+                if (this.calendarEventForm && !calendari.some(c => c.id === this.calendarEventForm.scope)) {
+                    this.calendarEventForm.scope = calendari[0] ? calendari[0].id : '';
+                    this.calendarEventForm.targetValue = '';
+                }
+            },
+            apriImpostazioniCalendario() {
+                if (!this.isAdminOrSuper) return;
+                this.calendarTypesDraft = clonaConfigCalendario(this.calendarEventTypes);
+                this.calendarCalendarsDraft = clonaConfigCalendario(this.calendarScopes);
+                this.calendarSettingsTab = 'tipologie';
+                this.showCalendarSettingsModal = true;
+            },
+            chiudiImpostazioniCalendario() {
+                if (this.calendarSettingsSaving) return;
+                this.showCalendarSettingsModal = false;
+            },
+            aggiungiTipologiaCalendario() {
+                const palette = ['#462678', '#21A067', '#B45309', '#2563EB', '#9B66A5', '#0F766E', '#DC2626', '#6B7280'];
+                this.calendarTypesDraft.push({
+                    id: '',
+                    label: 'Nuova tipologia',
+                    color: palette[this.calendarTypesDraft.length % palette.length]
+                });
+            },
+            rimuoviTipologiaCalendario(index) {
+                if (this.calendarTypesDraft.length <= 1) return alert('Deve restare almeno una tipologia di evento.');
+                const tipo = this.calendarTypesDraft[index];
+                if (tipo && tipo.id) {
+                    const usi = this.eventiCalendario.filter(ev => (ev.type || 'altro') === tipo.id).length;
+                    if (usi > 0) return alert(`Non puoi eliminare questa tipologia: è usata da ${usi} ${usi === 1 ? 'evento' : 'eventi'}. Puoi rinominarla o cambiarne il colore.`);
+                }
+                this.calendarTypesDraft.splice(index, 1);
+            },
+            aggiungiCalendarioPreimpostato() {
+                const palette = ['#462678', '#21A067', '#2563EB', '#B45309', '#9B66A5', '#0F766E', '#DC2626', '#6B7280'];
+                this.calendarCalendarsDraft.push({
+                    id: '',
+                    label: 'Nuovo calendario',
+                    color: palette[this.calendarCalendarsDraft.length % palette.length],
+                    target: 'none'
+                });
+            },
+            rimuoviCalendarioPreimpostato(index) {
+                if (this.calendarCalendarsDraft.length <= 1) return alert('Deve restare almeno un calendario.');
+                const calendario = this.calendarCalendarsDraft[index];
+                if (calendario && calendario.id) {
+                    const usi = this.eventiCalendario.filter(ev => (ev.scope || 'regionale') === calendario.id).length;
+                    if (usi > 0) return alert(`Non puoi eliminare questo calendario: contiene ${usi} ${usi === 1 ? 'evento' : 'eventi'}. Puoi rinominarlo o cambiarne il colore.`);
+                }
+                this.calendarCalendarsDraft.splice(index, 1);
+            },
+            async salvaImpostazioniCalendario() {
+                if (!this.isAdminOrSuper) return;
+                if (!this.calendarTypesDraft.length) return alert('Inserisci almeno una tipologia di evento.');
+                if (!this.calendarCalendarsDraft.length) return alert('Inserisci almeno un calendario.');
+                if (this.calendarTypesDraft.some(t => !String(t.label || '').trim())) return alert('Ogni tipologia deve avere un nome.');
+                if (this.calendarCalendarsDraft.some(c => !String(c.label || '').trim())) return alert('Ogni calendario deve avere un nome.');
+                const tipologie = normalizzaTipologieEvento(this.calendarTypesDraft);
+                const calendari = normalizzaCalendariEvento(this.calendarCalendarsDraft);
+                this.calendarSettingsSaving = true;
+                try {
+                    await setDoc(doc(db, 'calendario_impostazioni', 'config'), {
+                        tipologie,
+                        calendari,
+                        updatedAt: new Date().toISOString(),
+                        updatedBy: this.myEmail
+                    }, { merge: true });
+                    this.applicaImpostazioniCalendario(tipologie, calendari);
+                    this.showCalendarSettingsModal = false;
+                    this.mostraToastCalendario('Impostazioni del calendario aggiornate.');
+                } catch (e) {
+                    alert('Impossibile salvare le impostazioni del calendario: ' + e.message);
+                } finally {
+                    this.calendarSettingsSaving = false;
+                }
             },
             toggleDestinatarioCalendario(id) {
                 const f = this.calendarEventForm;
@@ -4571,8 +4832,8 @@
             },
             resetFiltriCalendario() {
                 this.calendarioFiltri = {
-                    calendari: CALENDAR_SCOPES.map(c => c.id),
-                    tipi: CALENDAR_EVENT_TYPES.map(t => t.id),
+                    calendari: this.calendarScopes.map(c => c.id),
+                    tipi: this.calendarEventTypes.map(t => t.id),
                     destinatari: CALENDAR_AUDIENCES.map(a => a.id),
                     soloPromemoria: false,
                     soloMiei: false
@@ -4589,7 +4850,6 @@
                 const titolo = String(f.title || '').trim();
                 if (!titolo) return alert('Inserisci il titolo dell\'evento.');
                 if (!f.type) return alert('Scegli la tipologia dell\'evento.');
-                if (!Array.isArray(f.audience) || f.audience.length === 0) return alert('Indica a chi è rivolto l\'evento.');
                 if (!f.startDate) return alert('Inserisci la data di inizio.');
                 const endDate = f.endDate || f.startDate;
                 if (endDate < f.startDate) return alert('La data di fine non può essere precedente alla data di inizio.');
@@ -4597,14 +4857,19 @@
                     if (!f.startTime || !f.endTime) return alert('Inserisci orario di inizio e fine, oppure seleziona "Tutto il giorno".');
                     if (endDate === f.startDate && f.endTime < f.startTime) return alert('L\'orario di fine non può essere precedente all\'orario di inizio.');
                 }
-                if (f.scope === 'zona' && !f.targetValue) return alert('Seleziona la zona del calendario.');
-                if (f.scope === 'gruppo' && !f.targetValue) return alert('Seleziona il gruppo del calendario.');
+                const scopeConfig = this.scopeEventoCalendario(f.scope || (this.calendarScopes[0] ? this.calendarScopes[0].id : 'regionale'));
+                if (scopeConfig.target === 'zona' && !f.targetValue) return alert('Seleziona la zona del calendario.');
+                if (scopeConfig.target === 'gruppo' && !f.targetValue) return alert('Seleziona il gruppo del calendario.');
                 const minutiPromemoria = Number(f.reminder && f.reminder.minutesBefore);
+                // "A chi è rivolto" è bloccato in attesa di aggiornamento: i nuovi eventi restano aperti a tutti,
+                // mentre gli eventi esistenti mantengono i destinatari già salvati.
+                const audience = [...new Set((Array.isArray(f.audience) ? f.audience : []).filter(a => CALENDAR_AUDIENCES.some(x => x.id === a)))];
+                if (!audience.length) audience.push('tutti');
                 const payload = {
                     title: titolo,
                     description: String(f.description || '').trim().slice(0, 5000),
                     type: f.type,
-                    audience: [...new Set((Array.isArray(f.audience) ? f.audience : []).filter(a => CALENDAR_AUDIENCES.some(x => x.id === a)))],
+                    audience,
                     allDay: !!f.allDay,
                     startDate: f.startDate,
                     endDate,
@@ -4612,8 +4877,8 @@
                     endTime: f.allDay ? '' : f.endTime,
                     location: String(f.location || '').trim().slice(0, 300),
                     link: sanitizzaUrl(f.link),
-                    scope: f.scope || 'regionale',
-                    targetValue: f.scope === 'regionale' ? '' : String(f.targetValue || '').trim().slice(0, 200),
+                    scope: f.scope || scopeConfig.id || (this.calendarScopes[0] ? this.calendarScopes[0].id : 'regionale'),
+                    targetValue: scopeConfig.target === 'none' ? '' : String(f.targetValue || '').trim().slice(0, 200),
                     reminder: {
                         enabled: !!(f.reminder && f.reminder.enabled),
                         minutesBefore: isFinite(minutiPromemoria) ? Math.max(0, minutiPromemoria) : 0

@@ -134,6 +134,13 @@ service cloud.firestore {
         ));
       }
 
+      // Impostazioni del calendario: tipologie e calendari preimpostati.
+      // Lettura pubblica, modifica riservata ad admin e superadmin.
+      match /calendario_impostazioni/{document} {
+        allow read: if true;
+        allow write: if isAdminOrSuper();
+      }
+
       match /settings/{document} {
         allow read: if true;
         allow write: if isSuperAdmin();
