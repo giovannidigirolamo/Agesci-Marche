@@ -1405,7 +1405,13 @@
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                             <div><label class="block font-medium mb-1">N. iscritti</label><input v-model.number="newBudget.registeredCount" type="number" min="0" class="w-full border rounded-xl p-2"></div>
                             <div><label class="block font-medium mb-1">Quota iscrizione €</label><input v-model.number="newBudget.feeRegistration" type="number" min="0" class="w-full border rounded-xl p-2"></div>
-                            <div><label class="block font-medium mb-1">N. partecipanti</label><input v-model.number="newBudget.participantsCount" type="number" min="0" class="w-full border rounded-xl p-2"></div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="block font-medium">N. partecipanti</label>
+                                    <button v-if="newBudget.registeredCount && newBudget.participantsCount !== newBudget.registeredCount" type="button" @click="newBudget.participantsCount = newBudget.registeredCount" class="text-[10px] text-agesci-purple font-bold hover:underline" title="Imposta lo stesso numero di iscritti">Copia da iscritti</button>
+                                </div>
+                                <input v-model.number="newBudget.participantsCount" type="number" min="0" class="w-full border rounded-xl p-2">
+                            </div>
                             <div><label class="block font-medium mb-1">Quota partecipaz. €</label><input v-model.number="newBudget.feeParticipation" type="number" min="0" class="w-full border rounded-xl p-2"></div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1426,13 +1432,28 @@
                         <input v-model="row.descrizione" type="text" placeholder="Descrizione spesa" class="col-span-4 border rounded-xl p-2">
                         <button @click="removePreventivoRow(i)" class="col-span-1 text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
                     </div>
-                    <button @click="addPreventivoRow" class="text-agesci-purple font-bold hover:underline"><i class="fa-solid fa-plus mr-1"></i> Aggiungi riga di spesa</button>
+                    <div class="flex flex-wrap justify-between items-center gap-2">
+                        <button @click="addPreventivoRow" class="text-agesci-purple font-bold hover:underline"><i class="fa-solid fa-plus mr-1"></i> Aggiungi riga di spesa</button>
+                        <button type="button" @click="copyPreventivoToConsuntivo(); newBudgetTab = 'consuntivo'" class="bg-purple-50 hover:bg-purple-100 text-agesci-purple text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 border border-purple-200" title="Copia queste voci nel consuntivo e passa alla scheda consuntivo">
+                            <i class="fa-solid fa-arrow-right-to-bracket"></i> Copia e compila Consuntivo
+                        </button>
+                    </div>
                     <p class="text-right font-bold text-agesci-dark pt-2 border-t">Totale Uscite Preventivo (b): € {{ newBudgetPreventivoTotal }}</p>
                     <p class="text-right text-gray-500">Saldo previsto (a-b): € {{ newBudgetIncomeTotal - newBudgetPreventivoTotal }}</p>
                 </div>
 
                 <div v-if="newBudgetTab === 'consuntivo'" class="space-y-3">
-                    <p class="text-gray-500">Da compilare a evento concluso.</p>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-purple-50 border border-purple-200 rounded-2xl">
+                        <div>
+                            <p class="font-bold text-agesci-purple text-xs flex items-center gap-1.5">
+                                <i class="fa-solid fa-receipt"></i> Spese a Consuntivo (evento concluso)
+                            </p>
+                            <p class="text-[11px] text-gray-600">Inserisci le spese effettive o importa direttamente le voci del preventivo per risparmiare tempo.</p>
+                        </div>
+                        <button type="button" @click="copyPreventivoToConsuntivo" class="bg-agesci-purple hover:bg-agesci-lightpurple text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition flex items-center gap-1.5 shrink-0">
+                            <i class="fa-solid fa-copy"></i> Copia voci dal Preventivo
+                        </button>
+                    </div>
                     <div v-for="(row, i) in newBudget.consuntivo" :key="i" class="grid grid-cols-12 gap-2 items-center">
                         <select v-model="row.categoria" class="col-span-3 border rounded-xl p-2">
                             <option v-for="c in expenseCategories" :key="c" :value="c">{{ c }}</option>
@@ -1442,7 +1463,12 @@
                         <input v-model="row.descrizione" type="text" placeholder="Descrizione" class="col-span-4 border rounded-xl p-2">
                         <button @click="removeConsuntivoRow(i)" class="col-span-1 text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
                     </div>
-                    <button @click="addConsuntivoRow" class="text-agesci-purple font-bold hover:underline"><i class="fa-solid fa-plus mr-1"></i> Aggiungi riga di spesa</button>
+                    <div class="flex flex-wrap justify-between items-center gap-2">
+                        <button @click="addConsuntivoRow" class="text-agesci-purple font-bold hover:underline"><i class="fa-solid fa-plus mr-1"></i> Aggiungi riga di spesa</button>
+                        <button v-if="newBudget.preventivo && newBudget.preventivo.length > 0" type="button" @click="copyPreventivoToConsuntivo" class="text-xs text-agesci-purple font-bold hover:underline flex items-center gap-1">
+                            <i class="fa-solid fa-copy"></i> Reimposta copiando dal Preventivo
+                        </button>
+                    </div>
                     <p class="text-right font-bold text-agesci-dark pt-2 border-t">Totale Uscite Consuntivo (b): € {{ newBudgetConsuntivoTotal }}</p>
                     <p class="text-right text-gray-500">Saldo effettivo (a-b): € {{ newBudgetIncomeTotal - newBudgetConsuntivoTotal }}</p>
                 </div>
@@ -3632,6 +3658,29 @@
             removePreventivoRow(i) { this.newBudget.preventivo.splice(i, 1); },
             addConsuntivoRow() { this.newBudget.consuntivo.push({ categoria: this.expenseCategories[0], data: '', importo: 0, descrizione: '' }); },
             removeConsuntivoRow(i) { this.newBudget.consuntivo.splice(i, 1); },
+            copyPreventivoToConsuntivo() {
+                const prev = this.newBudget.preventivo || [];
+                const vociValide = prev.filter(p => (p.descrizione && p.descrizione.trim()) || (p.importo != null && p.importo !== '' && Number(p.importo) > 0));
+                if (!vociValide.length) {
+                    return alert("Nessuna spesa valida trovata nel preventivo da copiare. Inserisci prima le voci nella scheda '2. Preventivo'.");
+                }
+                const hasExistingData = (this.newBudget.consuntivo || []).some(r => (r.descrizione && r.descrizione.trim()) || (r.importo != null && r.importo !== '' && Number(r.importo) > 0) || r.data);
+                if (hasExistingData) {
+                    if (!confirm("Il consuntivo contiene già delle voci compilate. Vuoi sostituirle con tutte le voci del preventivo?")) {
+                        return;
+                    }
+                }
+                const defaultDate = this.newBudget.startDate || '';
+                this.newBudget.consuntivo = prev.map(p => ({
+                    categoria: p.categoria || this.expenseCategories[0],
+                    data: defaultDate,
+                    importo: p.importo != null && p.importo !== '' ? Number(p.importo) : 0,
+                    descrizione: p.descrizione || ''
+                }));
+                if (!this.newBudget.participantsCount && this.newBudget.registeredCount) {
+                    this.newBudget.participantsCount = this.newBudget.registeredCount;
+                }
+            },
             budgetIncomeTotal(b) {
                 return (Number(b.registeredCount) || 0) * (Number(b.feeRegistration) || 0)
                     + (Number(b.participantsCount) || 0) * (Number(b.feeParticipation) || 0)
