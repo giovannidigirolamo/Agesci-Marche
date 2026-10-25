@@ -1,9 +1,11 @@
-const CACHE_NAME = 'mappagesci-marche-v4';
+const CACHE_NAME = 'mappagesci-marche-v6';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
   './assets/logo.png',
+  './assets/icon-192.png',
+  './assets/icon-512.png',
   './assets/modello_rimborso_spese.xlsx'
 ];
 

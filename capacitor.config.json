@@ -1,0 +1,11 @@
+{
+  "appId": "it.agesci.marche",
+  "appName": "Agesci Marche",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

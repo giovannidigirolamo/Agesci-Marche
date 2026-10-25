@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Agesci Marche">
     <title>Agesci Marche</title>
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#211638">
-    <link rel="apple-touch-icon" href="assets/logo.png">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
 
     <!-- Font Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -69,12 +71,20 @@
 
     <style>
         .leaflet-popup-content-wrapper { border-radius: 12px; }
-        .leaflet-popup-content { margin: 16px; }
+        .leaflet-popup-content { margin: 14px; max-width: min(260px, 72vw); }
         [v-cloak] { display: none; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #AEB0D9; border-radius: 10px; }
         .map-container { z-index: 10; }
+        /* Le sezioni occupano tutto lo spazio sopra la barra di navigazione mobile */
+        @media (max-width: 1023px) {
+            .app-module { bottom: calc(4rem + env(safe-area-inset-bottom, 0px)) !important; }
+        }
+        .mobile-bottom-nav {
+            height: calc(4rem + env(safe-area-inset-bottom, 0px));
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
     </style>
 </head>
 <body class="bg-agesci-lightgray text-agesci-dark antialiased overflow-hidden">
@@ -145,7 +155,7 @@
     <main class="flex-grow relative overflow-hidden pb-16 lg:pb-0">
 
         <!-- MODULO 0: HOME -->
-        <div v-show="currentModule === 'home'" class="absolute inset-0 overflow-y-auto bg-gray-50 p-4 md:p-8">
+        <div v-show="currentModule === 'home'" class="app-module absolute inset-0 overflow-y-auto bg-gray-50 p-4 md:p-8">
             <div class="max-w-4xl mx-auto space-y-6 pb-10">
                 <div class="text-center space-y-2 pt-2 md:pt-4">
                     <div class="w-16 h-16 rounded-2xl overflow-hidden bg-white p-2 shadow mx-auto flex items-center justify-center">
@@ -158,7 +168,7 @@
 
                 <!-- NOTIZIE & LINK IN EVIDENZA  -->
                 <div class="bg-white rounded-2xl p-6 border shadow-sm space-y-4">
-                    <div class="flex justify-between items-center border-b pb-3">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b pb-3">
                         <h2 class="font-bold text-base text-agesci-dark"><i class="fa-solid fa-bullhorn text-agesci-purple mr-2"></i>Notizie & Link in Evidenza</h2>
                         <button v-if="isAdminOrSuper" @click="openNewNoticeModal" class="bg-agesci-purple text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow hover:bg-agesci-lightpurple transition">
                             + Aggiungi Notizia
@@ -186,7 +196,7 @@
                 </div>
 
                 <!-- GRIGLIA CON LE AREE -->
-                <div class="grid gap-4" :class="homeModuleCount === 1 ? 'grid-cols-1' : 'grid-cols-2'">
+                <div class="grid gap-4" :class="homeModuleCount === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'">
                     <button v-if="canAccessModule('territorio')" @click="currentModule = 'territorio'" class="bg-white border rounded-2xl p-5 md:p-6 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 transition space-y-2">
                         <i class="fa-solid fa-tent text-2xl md:text-3xl text-agesci-purple"></i>
                         <h3 class="font-bold text-sm md:text-base text-agesci-dark">Campi e sentieri</h3>
@@ -234,7 +244,7 @@
         </div>
 
         <!-- MODULO 1: CAMPI E SENTIERI -->
-        <div v-show="currentModule === 'territorio' && canAccessModule('territorio')" class="absolute inset-0 flex flex-col">
+        <div v-show="currentModule === 'territorio' && canAccessModule('territorio')" class="app-module absolute inset-0 flex flex-col">
             
             <!-- SCHERMATA DI AVVISO PER UTENTI NON AUTENTICATI (se l'accesso pubblico è disabilitato) -->
 <div v-if="!canSeeTerritorio" class="flex-grow flex items-center justify-center p-6 bg-gray-50 text-center">
@@ -253,7 +263,7 @@
 
             <!-- CONTENUTO DEL MODULO (VISIBILE SOLO SE AUTENTICATO) -->
             <template v-if="canSeeTerritorio">
-                <div class="bg-white border-b px-4 py-2 flex justify-between items-center z-20 shrink-0 text-xs shadow-sm">
+                <div class="bg-white border-b px-4 py-2 flex flex-wrap justify-between items-center gap-2 z-20 shrink-0 text-xs shadow-sm">
                     <div class="flex gap-2">
                         <button @click="territorioSubView = 'map'" :class="{'bg-agesci-dark text-white font-bold': territorioSubView === 'map', 'bg-gray-100 text-gray-700': territorioSubView !== 'map'}" class="px-3 py-1.5 rounded-lg transition"><i class="fa-solid fa-map mr-1"></i> Mappa</button>
                         <button @click="territorioSubView = 'list'" :class="{'bg-agesci-dark text-white font-bold': territorioSubView === 'list', 'bg-gray-100 text-gray-700': territorioSubView !== 'list'}" class="px-3 py-1.5 rounded-lg transition"><i class="fa-solid fa-list mr-1"></i> Elenco</button>
@@ -272,15 +282,15 @@
                 <div v-show="territorioSubView === 'list'" class="flex-grow overflow-y-auto p-4 md:p-6 bg-gray-50">
                     <div class="max-w-7xl mx-auto space-y-4">
                         <div class="flex flex-col sm:flex-row justify-between gap-2">
-                            <input v-model="searchText" type="text" placeholder="Cerca struttura o comune..." class="border rounded-xl p-2 text-sm bg-white max-w-sm">
-                            <div class="flex gap-2">
-                                <select v-model="filterBranch" class="border rounded-xl p-2 text-sm bg-white">
+                            <input v-model="searchText" type="text" placeholder="Cerca struttura o comune..." class="border rounded-xl p-2 text-sm bg-white w-full sm:max-w-sm">
+                            <div class="grid grid-cols-2 gap-2 sm:flex">
+                                <select v-model="filterBranch" class="border rounded-xl p-2 text-sm bg-white w-full sm:w-auto">
                                     <option value="">Tutte le branche</option>
                                     <option value="LC">LC</option>
                                     <option value="EG">EG</option>
                                     <option value="RS">RS</option>
                                 </select>
-                                <select v-model="filterType" class="border rounded-xl p-2 text-sm bg-white">
+                                <select v-model="filterType" class="border rounded-xl p-2 text-sm bg-white w-full sm:w-auto">
                                     <option value="">Tutti i tipi</option>
                                     <option value="luogo">⛺ Campi / Luoghi</option>
                                     <option value="cammino">🥾 Cammini</option>
@@ -888,7 +898,7 @@
         </div>
 
         <!-- MODULO 2: ATTIVITÀ REGIONALI & SETTORI -->
-        <div v-show="currentModule === 'attivita' && canAccessModule('attivita')" class="absolute inset-0 flex flex-col p-4 md:p-8 overflow-y-auto bg-gray-50">
+        <div v-show="currentModule === 'attivita' && canAccessModule('attivita')" class="app-module absolute inset-0 flex flex-col p-4 md:p-8 overflow-y-auto bg-gray-50">
             <div class="max-w-6xl mx-auto w-full space-y-6">
                 <!-- Header con Tabs per separare Documenti, Prenotazioni e Le Mie Prenotazioni -->
                 <div class="bg-white rounded-2xl p-6 border shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -905,7 +915,7 @@
 
                 <!-- SEZIONE: DOCUMENTI E CONSIGLI UTILITÀ -->
                 <div v-show="attivitaTab === 'documenti'" class="space-y-4">
-                    <div class="flex justify-between items-center bg-white p-4 rounded-2xl border shadow-sm">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 bg-white p-4 rounded-2xl border shadow-sm">
                         <h2 class="font-bold text-agesci-dark"><i class="fa-solid fa-folder-open text-agesci-purple mr-2"></i>Materiale a disposizione</h2>
                         <button v-if="isAdminOrSuper" @click="openNewDocumentModal" class="bg-agesci-purple text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow hover:bg-agesci-lightpurple transition">
                             + Aggiungi Documento
@@ -935,7 +945,7 @@
 
                 <!-- SEZIONE: PRENOTAZIONI ATTIVITÀ -->
                 <div v-show="attivitaTab === 'prenotazioni'" class="space-y-4">
-                    <div class="flex justify-between items-center bg-white p-4 rounded-2xl border shadow-sm">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 bg-white p-4 rounded-2xl border shadow-sm">
                         <div v-if="attivitaSubView === 'categorie'">
                             <h2 class="font-bold text-agesci-dark"><i class="fa-solid fa-calendar-days text-agesci-purple mr-2"></i>Scegli una tipologia</h2>
                         </div>
@@ -1246,7 +1256,7 @@
         </div>
 
         <!-- MODULO 3: CALENDARIO -->
-        <div v-show="currentModule === 'eventi' && canAccessModule('eventi')" class="absolute inset-0 flex flex-col bg-gray-50">
+        <div v-show="currentModule === 'eventi' && canAccessModule('eventi')" class="app-module absolute inset-0 flex flex-col bg-gray-50">
 
             <!-- BARRA STRUMENTI CALENDARIO -->
             <div class="bg-white border-b px-3 md:px-4 py-2 flex flex-wrap items-center justify-between gap-2 z-20 shrink-0 shadow-sm">
@@ -1788,14 +1798,14 @@
 
 
         <!-- MODULO 4: BILANCI EVENTI -->
-        <div v-show="currentModule === 'bilanci' && canAccessModule('bilanci')" class="absolute inset-0 flex flex-col p-4 md:p-8 overflow-y-auto bg-gray-50">
+        <div v-show="currentModule === 'bilanci' && canAccessModule('bilanci')" class="app-module absolute inset-0 flex flex-col p-4 md:p-8 overflow-y-auto bg-gray-50">
             <div class="max-w-7xl mx-auto w-full space-y-6">
                 <div class="bg-white rounded-2xl p-6 border shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h1 class="text-2xl font-bold text-agesci-dark"><i class="fa-solid fa-wallet text-agesci-purple mr-2"></i>Gestione Bilanci & Rendiconti</h1>
                         <p class="text-sm text-gray-500">Visione multilivello (per evento, tipologia spesa, tipo evento), storico e import/export Excel.</p>
                     </div>
-                    <div class="flex gap-2">
+                    <div class="flex flex-wrap gap-2">
                         <button @click="openNewRimborsoModal" class="bg-agesci-purple text-white px-4 py-2 rounded-xl text-xs font-bold shadow">
                             <i class="fa-solid fa-file-invoice mr-1"></i> Richiesta Rimborso Spese
                         </button>
@@ -2105,7 +2115,7 @@
         </div>
 
         <!-- MODULO 5: ADMIN -->
-        <div v-show="currentModule === 'admin' && isAdminOrSuper" class="absolute inset-0 flex flex-col p-4 md:p-8 overflow-y-auto bg-gray-50">
+        <div v-show="currentModule === 'admin' && isAdminOrSuper" class="app-module absolute inset-0 flex flex-col p-4 md:p-8 pb-6 lg:pb-8 overflow-y-auto bg-gray-50">
             <div class="max-w-6xl mx-auto w-full space-y-6">
                 <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-amber-900">
                     <h2 class="text-xl font-bold"><i class="fa-solid fa-shield-halved mr-2"></i>Pannello Amministrativo</h2>
@@ -2151,7 +2161,7 @@
                 <div class="bg-white rounded-2xl p-6 border shadow-sm space-y-4">
                     <h3 class="font-bold text-base text-agesci-dark border-b pb-2">Note / Aggiornamenti in attesa ({{ pendingUpdates.length }})</h3>
                     <div v-for="upd in pendingUpdates" :key="upd.id" class="p-3 bg-gray-50 rounded-xl border space-y-2">
-                        <div class="flex justify-between items-center">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1">
                             <span class="font-bold text-sm text-agesci-dark">Nota per: {{ getPlaceName(upd.placeId) }}</span>
                             <span class="text-xs text-gray-500">Utente: {{ upd.authorEmail }}</span>
                         </div>
@@ -2315,23 +2325,23 @@
     </main>
 
     <!-- MOBILE NAVIGATION FOOTER -->
-    <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-agesci-dark border-t border-agesci-purple z-[60] flex justify-around text-white py-2">
-        <button @click="currentModule = 'home'" :class="{'text-agesci-yellow font-bold': currentModule === 'home', 'text-gray-400': currentModule !== 'home'}" class="flex flex-col items-center justify-center w-full">
+    <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-agesci-dark border-t border-agesci-purple z-[60] flex justify-around items-stretch text-white mobile-bottom-nav">
+        <button @click="currentModule = 'home'" :class="{'text-agesci-yellow font-bold': currentModule === 'home', 'text-gray-400': currentModule !== 'home'}" class="flex flex-col items-center justify-center w-full h-full">
             <i class="fa-solid fa-house text-base mb-0.5"></i><span class="text-[9px] uppercase">Home</span>
         </button>
-        <button v-if="canAccessModule('territorio')" @click="currentModule = 'territorio'" :class="{'text-agesci-yellow font-bold': currentModule === 'territorio', 'text-gray-400': currentModule !== 'territorio'}" class="flex flex-col items-center justify-center w-full">
+        <button v-if="canAccessModule('territorio')" @click="currentModule = 'territorio'" :class="{'text-agesci-yellow font-bold': currentModule === 'territorio', 'text-gray-400': currentModule !== 'territorio'}" class="flex flex-col items-center justify-center w-full h-full">
             <i class="fa-solid fa-tent text-base mb-0.5"></i><span class="text-[9px] uppercase">Luoghi</span>
         </button>
-        <button v-if="canAccessModule('attivita')" @click="currentModule = 'attivita'" :class="{'text-agesci-yellow font-bold': currentModule === 'attivita', 'text-gray-400': currentModule !== 'attivita'}" class="flex flex-col items-center justify-center w-full">
+        <button v-if="canAccessModule('attivita')" @click="currentModule = 'attivita'" :class="{'text-agesci-yellow font-bold': currentModule === 'attivita', 'text-gray-400': currentModule !== 'attivita'}" class="flex flex-col items-center justify-center w-full h-full">
             <i class="fa-solid fa-compass text-base mb-0.5"></i><span class="text-[9px] uppercase">Attività</span>
         </button>
-        <button v-if="canAccessModule('eventi')" @click="currentModule = 'eventi'" :class="{'text-agesci-yellow font-bold': currentModule === 'eventi', 'text-gray-400': currentModule !== 'eventi'}" class="flex flex-col items-center justify-center w-full">
+        <button v-if="canAccessModule('eventi')" @click="currentModule = 'eventi'" :class="{'text-agesci-yellow font-bold': currentModule === 'eventi', 'text-gray-400': currentModule !== 'eventi'}" class="flex flex-col items-center justify-center w-full h-full">
             <i class="fa-solid fa-calendar-days text-base mb-0.5"></i><span class="text-[9px] uppercase">Calendario</span>
         </button>
-        <button v-if="canAccessModule('bilanci')" @click="currentModule = 'bilanci'" :class="{'text-agesci-yellow font-bold': currentModule === 'bilanci', 'text-gray-400': currentModule !== 'bilanci'}" class="flex flex-col items-center justify-center w-full">
+        <button v-if="canAccessModule('bilanci')" @click="currentModule = 'bilanci'" :class="{'text-agesci-yellow font-bold': currentModule === 'bilanci', 'text-gray-400': currentModule !== 'bilanci'}" class="flex flex-col items-center justify-center w-full h-full">
             <i class="fa-solid fa-wallet text-base mb-0.5"></i><span class="text-[9px] uppercase">Bilanci</span>
         </button>
-        <button v-if="isAdminOrSuper" @click="currentModule = 'admin'" :class="{'text-agesci-yellow font-bold': currentModule === 'admin', 'text-gray-400': currentModule !== 'admin'}" class="flex flex-col items-center justify-center w-full relative">
+        <button v-if="isAdminOrSuper" @click="currentModule = 'admin'" :class="{'text-agesci-yellow font-bold': currentModule === 'admin', 'text-gray-400': currentModule !== 'admin'}" class="flex flex-col items-center justify-center w-full h-full relative">
             <i class="fa-solid fa-shield-halved text-base mb-0.5"></i><span class="text-[9px] uppercase">Admin</span>
         </button>
     </div>
@@ -2415,13 +2425,52 @@
                 </template>
             </div>
 
-            <div class="space-y-2 pt-2 border-t">
-                <button @click="installPwa" class="w-full bg-agesci-yellow text-agesci-dark font-bold py-2.5 px-4 rounded-xl shadow-sm hover:bg-yellow-400 transition text-xs flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-download"></i> Installa App sul Dispositivo
-                </button>
+            <div class="pt-2 border-t space-y-3">
+                <div v-if="!isNativeApp" class="bg-gray-50 p-4 rounded-2xl border space-y-2">
+                    <h4 class="font-bold text-agesci-dark text-xs uppercase"><i class="fa-brands fa-android mr-1 text-agesci-purple"></i> App Android (APK)</h4>
+                    <p class="text-[11px] text-gray-500 leading-relaxed">Installa l'app tramite il file APK, senza usare la scorciatoia del browser “Aggiungi alla schermata Home”.</p>
+                    <button @click="apriDownloadApk" class="w-full bg-agesci-dark text-white font-bold py-2.5 px-4 rounded-xl shadow-sm hover:bg-agesci-purple transition text-xs flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-download"></i>
+                        {{ apkChecking ? 'Verifica disponibilità...' : (apkDisponibile ? 'Scarica APK Android' : 'Informazioni sull\'APK') }}
+                    </button>
+                    <p v-if="!apkChecking && !apkDisponibile" class="text-[10px] text-amber-600 text-center">L'APK non è ancora disponibile su questo server.</p>
+                </div>
                 <button @click="logout(); showProfileModal = false;" class="w-full bg-red-50 text-red-600 font-bold py-2.5 px-4 rounded-xl border border-red-100 hover:bg-red-100 transition text-xs flex items-center justify-center gap-2">
                     <i class="fa-solid fa-right-from-bracket"></i> Esci dall'Account
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE INFORMAZIONI APK ANDROID -->
+    <div v-if="showApkModal" class="fixed inset-0 z-[3600] flex items-end md:items-center justify-center p-0 md:p-4">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showApkModal = false"></div>
+        <div class="relative w-full md:w-[500px] max-h-[90vh] bg-white rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up text-xs">
+            <div class="bg-agesci-dark text-white px-5 py-4 flex justify-between items-center shrink-0">
+                <div>
+                    <p class="text-[9px] uppercase tracking-widest font-bold text-agesci-yellow">Distribuzione Android</p>
+                    <h3 class="text-lg font-bold">App Agesci Marche (APK)</h3>
+                </div>
+                <button @click="showApkModal = false" class="bg-white/10 hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center transition shrink-0"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-3 text-gray-700">
+                <div v-if="apkDisponibile" class="bg-green-50 border border-green-200 rounded-2xl p-4 text-center space-y-2">
+                    <i class="fa-brands fa-android text-3xl text-green-600"></i>
+                    <p class="font-bold text-sm text-green-900">APK disponibile</p>
+                    <button @click="apriDownloadApk" class="bg-agesci-dark text-white rounded-xl px-4 py-2.5 font-bold hover:bg-agesci-purple transition">
+                        <i class="fa-solid fa-download mr-1"></i>Scarica Agesci-Marche.apk
+                    </button>
+                </div>
+                <div v-else class="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2">
+                    <p class="font-bold text-amber-900"><i class="fa-solid fa-clock mr-1"></i> APK non ancora pubblicato</p>
+                    <p class="text-[11px] text-amber-800 leading-relaxed">Il file APK non è ancora disponibile su questo server. L'amministratore regionale deve generarlo dalla build Android e pubblicarlo nella cartella <code class="bg-white/70 px-1 rounded">downloads/</code> del sito.</p>
+                </div>
+                <p class="text-[11px] leading-relaxed">L'APK è il file di installazione dell'app Android. Non è una scorciatoia del browser: si scarica e si installa sul telefono abilitando l'installazione da origini sconosciute, se richiesto.</p>
+                <p class="text-[11px] leading-relaxed">Su iPhone/iPad non è possibile installare file APK: per iOS serve una distribuzione tramite App Store o TestFlight.</p>
+                <p v-if="isAdminOrSuper && !apkDisponibile" class="text-[10px] text-gray-400">Build prevista tramite la pipeline <code class="bg-gray-100 px-1 rounded">.github/workflows/build-apk.yml</code> e istruzioni nel file <code class="bg-gray-100 px-1 rounded">APK.md</code>.</p>
+            </div>
+            <div class="px-5 py-3 border-t bg-gray-50 flex justify-end shrink-0">
+                <button @click="showApkModal = false" class="px-4 py-2 border rounded-xl font-bold bg-white">Chiudi</button>
             </div>
         </div>
     </div>
@@ -2582,6 +2631,9 @@
     // Lasciare vuoto se il sito e la cartella api/ sono sullo stesso dominio (es. entrambi su Vercel).
     // Se il sito è altrove (es. Netlify) e la funzione è su Vercel, scrivere qui l'indirizzo Vercel, es. "https://nome-progetto.vercel.app".
     const API_BASE = "";
+    // File APK Android pubblicato sul sito (vedi APK.md e workflow build-apk.yml).
+    const APK_INFO_PATH = 'downloads/apk-info.json';
+    const APK_DOWNLOAD_PATH = 'downloads/agesci-marche.apk';
 
     // Elenco Regioni -> Province, usato nel form "Terreni e Case"
     const REGIONI_PROVINCE = {
@@ -3112,7 +3164,10 @@
                     propertyType: 'Pubblica',
                     outOfRegion: false
                 },
-                deferredPrompt: null
+                apkDisponibile: false,
+                apkChecking: true,
+                showApkModal: false,
+                isNativeApp: !!window.Capacitor
             }
         },
         computed: {
@@ -3512,10 +3567,7 @@
                 if(place) this.openPlaceDetails(place);
             };
 
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                this.deferredPrompt = e;
-            });
+            if (!this.isNativeApp) this.verificaDisponibilitaApk();
 
             onAuthStateChanged(auth, (user) => {
                 this.currentUser = user;
@@ -3921,7 +3973,7 @@
                     });
 
                     const marker = L.marker([place.lat, place.lng], { icon: customIcon });
-                    marker.bindPopup(`<div class="font-sans min-w-[180px]"><h3 class="font-bold text-sm text-[#211638]">${escapeHtml(place.name)}</h3><p class="text-xs text-gray-500 mb-2">${escapeHtml(place.location)}</p><button onclick="window.openPlaceFromMap('${escapeHtml(place.id)}')" class="w-full bg-[#211638] text-white py-1 rounded text-xs font-semibold">Dettagli & Presenze</button></div>`);
+                    marker.bindPopup(`<div class="font-sans min-w-[180px]"><h3 class="font-bold text-sm text-[#211638]">${escapeHtml(place.name)}</h3><p class="text-xs text-gray-500 mb-2">${escapeHtml(place.location)}</p><button onclick="window.openPlaceFromMap('${escapeHtml(place.id)}')" class="w-full bg-[#211638] text-white py-1 rounded text-xs font-semibold">Dettagli & Presenze</button></div>`, { maxWidth: 280, minWidth: 180, autoPanPadding: [16, 24] });
                     this.markersLayer.addLayer(marker);
                 });
             },
@@ -5437,13 +5489,39 @@
                     XLSX.writeFile(wb, `Bilancio_${(b.eventName || 'evento').replace(/[^a-z0-9]+/gi, '_')}.xlsx`);
                 } catch (e) { alert("Errore durante l'esportazione: " + e.message); }
             },
-            installPwa() {
-                if (this.deferredPrompt) {
-                    this.deferredPrompt.prompt();
-                    this.deferredPrompt.userChoice.then(() => { this.deferredPrompt = null; });
-                } else {
-                    alert("Apri il menu del browser e seleziona 'Aggiungi alla schermata Home'.");
+            async verificaDisponibilitaApk() {
+                this.apkChecking = true;
+                try {
+                    const infoResp = await fetch(APK_INFO_PATH, { cache: 'no-store' });
+                    if (!infoResp.ok) {
+                        this.apkDisponibile = false;
+                        return;
+                    }
+                    const info = await infoResp.json();
+                    if (info.available !== true) {
+                        this.apkDisponibile = false;
+                        return;
+                    }
+                    const resp = await fetch(APK_DOWNLOAD_PATH, { method: 'HEAD', cache: 'no-store' });
+                    const tipo = (resp.headers.get('content-type') || '').toLowerCase();
+                    this.apkDisponibile = resp.ok && !tipo.includes('text/html');
+                } catch (e) {
+                    this.apkDisponibile = false;
+                } finally {
+                    this.apkChecking = false;
                 }
+            },
+            apriDownloadApk() {
+                if (!this.apkDisponibile) {
+                    this.showApkModal = true;
+                    return;
+                }
+                const link = document.createElement('a');
+                link.href = APK_DOWNLOAD_PATH;
+                link.download = 'Agesci-Marche.apk';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
             },
             async handleAuth() {
                 this.authError = '';
@@ -5516,7 +5594,7 @@
 
 <!-- REGISTRAZIONE SERVICE WORKER -->
 <script>
-    if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator && !window.Capacitor) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('sw.js').catch(err => console.warn('Registrazione Service Worker fallita:', err));
         });
