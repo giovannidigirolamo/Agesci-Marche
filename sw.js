@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mappagesci-marche-v6';
+const CACHE_NAME = 'mappagesci-marche-v7';
 const APP_SHELL = [
   './',
   './index.html',

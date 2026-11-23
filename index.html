@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -14,10 +14,11 @@
     <meta name="theme-color" content="#211638">
     <link rel="apple-touch-icon" href="assets/icon-192.png">
 
-    <!-- Font Inter -->
+    <!-- Font Atkinson Hyperlegible Next: progettato dal Braille Institute per la massima leggibilità
+         (lettere ben distinte: I/l/1, O/0, b/d...). Fallback sulla versione classica e sui font di sistema. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
     
     <!-- Icons FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -31,7 +32,7 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    fontFamily: { sans: ['"Atkinson Hyperlegible Next"', '"Atkinson Hyperlegible"', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'] },
                     colors: {
                         agesci: {
                             dark: '#211638',
@@ -85,27 +86,229 @@
             height: calc(4rem + env(safe-area-inset-bottom, 0px));
             padding-bottom: env(safe-area-inset-bottom, 0px);
         }
+
+        /* =====================================================================
+           LIVELLO ACCESSIBILITÀ: font, dimensioni testo, contrasti, blocchi,
+           focus da tastiera, menu laterale e scorrimento tra le pagine
+           ===================================================================== */
+        :root {
+            --a11y-scale: 1;
+            --side-w: 17rem;
+            --side-w-compact: 4.75rem;
+            --card-border: #d4cee0;
+            --card-border-strong: #b9b0cc;
+            --focus: #FDC500;
+        }
+        html { font-size: calc(106.25% * var(--a11y-scale)); -webkit-text-size-adjust: 100%; }
+        html[data-testo="grande"] { --a11y-scale: 1.12; }
+        html[data-testo="molto-grande"] { --a11y-scale: 1.25; }
+        body {
+            font-family: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.55;
+            letter-spacing: 0.005em;
+        }
+
+        /* Testi minuscoli: mai sotto ~12px, e scalano con la dimensione scelta */
+        #app .text-\[8px\], #app .text-\[9px\], #app .text-\[10px\] { font-size: 0.75rem !important; line-height: 1.35; }
+        #app .text-\[11px\] { font-size: 0.8125rem !important; line-height: 1.45; }
+        #app .text-xs { font-size: 0.8125rem; line-height: 1.45; }
+        #app .text-sm { font-size: 0.9375rem; line-height: 1.55; }
+        #app p, #app li { line-height: 1.6; }
+        #app h1, #app h2, #app h3 { line-height: 1.25; letter-spacing: -0.005em; }
+
+        /* Contrasti più alti per i testi grigi (WCAG AA su fondo chiaro) */
+        #app .text-gray-400 { color: #5d6170; }
+        #app .text-gray-500 { color: #4b4f5d; }
+        #app .text-gray-600 { color: #3d4150; }
+        #app .bg-agesci-dark .text-gray-400, #app .bg-agesci-dark .text-gray-300 { color: #d3d0e0; }
+        #app ::placeholder { color: #6b6f7d; opacity: 1; }
+
+        /* Blocchi più chiari: bordo visibile, ombra morbida, titoli separati */
+        #app .app-module .bg-white.rounded-2xl.border,
+        #app .app-module .bg-white.rounded-2xl.shadow-sm {
+            border: 1px solid var(--card-border);
+            box-shadow: 0 1px 2px rgba(33, 22, 56, .06), 0 4px 14px rgba(33, 22, 56, .05);
+        }
+        #app .app-module .bg-gray-50.rounded-2xl.border { border-color: var(--card-border); background: #faf9fc; }
+        #app .app-module .border-b { border-bottom-color: #e4e0ec; }
+        #app .app-module button.bg-white.rounded-2xl.border:hover { border-color: var(--card-border-strong); }
+        #app .app-module .bg-white.rounded-2xl > h2,
+        #app .app-module .bg-white.rounded-2xl .border-b > h2 { font-size: 1.125rem; }
+        #app .app-module .bg-gray-50 { background-color: #f6f5f9; }
+        #app table th { font-weight: 700; color: #2f2a40; }
+        #app table td, #app table th { padding-top: .75rem; padding-bottom: .75rem; }
+
+        /* Campi dei moduli: bordo più deciso e testo a 16px su mobile (evita lo zoom automatico iOS) */
+        #app input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), #app select, #app textarea { border-color: #b8b2c6; }
+        @media (max-width: 1023px) {
+            #app input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), #app select, #app textarea { font-size: 16px; }
+        }
+
+        /* Focus da tastiera ben visibile */
+        #app :focus { outline: none; }
+        #app :focus-visible, .skip-link:focus-visible {
+            outline: 3px solid var(--focus) !important;
+            outline-offset: 2px;
+            box-shadow: 0 0 0 5px #211638;
+            border-radius: 10px;
+        }
+
+        /* Link "Vai al contenuto" */
+        .skip-link {
+            position: fixed; left: 12px; top: -80px; z-index: 9999;
+            background: #FDC500; color: #211638; font-weight: 800;
+            padding: .75rem 1rem; border-radius: 12px; transition: top .15s;
+        }
+        .skip-link:focus { top: 12px; }
+        .sr-only-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+        /* ---------------- MENU LATERALE ---------------- */
+        .side-menu {
+            position: fixed; top: 0; bottom: 0; left: 0; z-index: 3500;
+            width: min(var(--side-w), 86vw);
+            background: #211638; color: #fff;
+            display: flex; flex-direction: column;
+            transform: translateX(-102%);
+            transition: transform .28s cubic-bezier(.2,.8,.2,1), width .22s ease;
+            box-shadow: 8px 0 30px rgba(0,0,0,.25);
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        .side-menu.is-open { transform: translateX(0); }
+        .side-backdrop {
+            position: fixed; inset: 0; z-index: 3400; background: rgba(20, 12, 36, .55);
+            backdrop-filter: blur(2px); animation: a11yFade .2s ease-out;
+        }
+        @media (min-width: 1024px) {
+            .side-menu {
+                position: relative; z-index: 40; transform: none; box-shadow: none;
+                width: var(--side-w); flex-shrink: 0; padding: 0;
+                border-right: 1px solid #462678;
+            }
+            .side-menu.is-compact { width: var(--side-w-compact); }
+            .side-backdrop { display: none; }
+            .side-menu .side-head { display: none; }
+        }
+        .side-scroll { flex: 1; overflow-y: auto; padding: .75rem .75rem 1rem; }
+        .side-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .9rem 1rem; border-bottom: 1px solid rgba(255,255,255,.1); }
+        .side-label {
+            font-size: .75rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+            color: #AEB0D9; padding: 1rem .75rem .4rem;
+        }
+        .side-link {
+            width: 100%; display: flex; align-items: center; gap: .85rem;
+            min-height: 48px; padding: .6rem .75rem; border-radius: 14px;
+            color: #ecebf5; text-align: left; font-weight: 600; font-size: 1rem;
+            transition: background .15s, color .15s;
+        }
+        .side-link:hover { background: rgba(174,176,217,.14); }
+        .side-link .side-ico {
+            width: 2.25rem; height: 2.25rem; flex-shrink: 0; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,.08); font-size: 1rem;
+        }
+        .side-link .side-txt { display: flex; flex-direction: column; min-width: 0; }
+        .side-link .side-desc { font-size: .78rem; font-weight: 400; color: #c9c7df; line-height: 1.35; margin-top: 2px; }
+        .side-link[aria-current="page"] { background: #FDC500; color: #211638; }
+        .side-link[aria-current="page"] .side-ico { background: rgba(33,22,56,.12); }
+        .side-link[aria-current="page"] .side-desc { color: #3a2f52; }
+        .side-sub {
+            width: 100%; display: flex; align-items: center; gap: .7rem;
+            min-height: 44px; padding: .5rem .75rem .5rem 1rem; border-radius: 12px;
+            color: #e3e1ef; font-size: .95rem; text-align: left;
+        }
+        .side-sub:hover { background: rgba(174,176,217,.14); }
+        .side-sub[aria-current="true"] { background: rgba(253,197,0,.16); color: #FDC500; font-weight: 700; }
+        .side-sub i { width: 1.25rem; text-align: center; opacity: .9; }
+        .side-badge { margin-left: auto; background: #E74030; color: #fff; font-size: .75rem; font-weight: 800; border-radius: 999px; padding: 0 .45rem; min-width: 1.4rem; text-align: center; }
+        .side-size { display: grid; grid-template-columns: repeat(3, 1fr); gap: .4rem; padding: 0 .5rem; }
+        .side-size button {
+            min-height: 44px; border-radius: 12px; border: 1px solid rgba(255,255,255,.18);
+            color: #fff; font-weight: 800; background: rgba(255,255,255,.04);
+        }
+        .side-size button[aria-pressed="true"] { background: #fff; color: #211638; border-color: #fff; }
+        .side-foot { border-top: 1px solid rgba(255,255,255,.1); padding: .6rem .75rem; }
+        /* Modalità compatta (solo desktop): solo icone */
+        @media (min-width: 1024px) {
+            .side-menu.is-compact .side-txt, .side-menu.is-compact .side-label,
+            .side-menu.is-compact .side-subgroup, .side-menu.is-compact .side-size,
+            .side-menu.is-compact .side-badge, .side-menu.is-compact .side-hide-compact { display: none; }
+            .side-menu.is-compact .side-link { justify-content: center; padding: .5rem; }
+            .side-menu.is-compact .side-scroll { padding: .75rem .5rem; }
+        }
+
+        /* Pulsante menu nell'intestazione */
+        .menu-toggle {
+            width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 1.2rem; flex-shrink: 0;
+        }
+        .menu-toggle:hover { background: rgba(255,255,255,.1); }
+
+        /* ---------------- SCORRIMENTO TRA LE PAGINE ---------------- */
+        @keyframes a11yFade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes pageFromRight { from { transform: translateX(42px); opacity: 0; } to { transform: none; opacity: 1; } }
+        @keyframes pageFromLeft  { from { transform: translateX(-42px); opacity: 0; } to { transform: none; opacity: 1; } }
+        .app-module.anim-next { animation: pageFromRight .26s cubic-bezier(.2,.8,.2,1); }
+        .app-module.anim-prev { animation: pageFromLeft .26s cubic-bezier(.2,.8,.2,1); }
+        .page-pager {
+            display: flex; align-items: stretch; justify-content: space-between; gap: .75rem;
+            max-width: 56rem; margin: 2rem auto .5rem; padding: 0 .25rem;
+        }
+        .page-pager button {
+            flex: 1; min-height: 56px; display: flex; align-items: center; gap: .75rem;
+            padding: .75rem 1rem; border-radius: 16px; border: 1px solid var(--card-border);
+            background: #fff; color: #211638; font-weight: 700; text-align: left;
+        }
+        .page-pager button:hover { border-color: #462678; }
+        .page-pager button.next { justify-content: flex-end; text-align: right; }
+        .page-pager small { display: block; font-size: .75rem; font-weight: 600; color: #4b4f5d; text-transform: uppercase; letter-spacing: .06em; }
+        .swipe-hint {
+            position: fixed; left: 50%; transform: translateX(-50%);
+            bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); z-index: 3000;
+            background: #211638; color: #fff; border-radius: 999px; padding: .7rem 1.1rem;
+            font-weight: 600; font-size: .9rem; box-shadow: 0 8px 24px rgba(0,0,0,.25);
+            display: flex; align-items: center; gap: .6rem; white-space: nowrap; animation: a11yFade .25s ease-out;
+        }
+
+        /* Barra di navigazione in basso (mobile): etichette leggibili */
+        .mobile-bottom-nav button { gap: 2px; position: relative; }
+        .mobile-bottom-nav button span { font-size: .72rem !important; text-transform: none !important; letter-spacing: 0; line-height: 1.1; }
+        .mobile-bottom-nav button[aria-current="page"]::before {
+            content: ""; position: absolute; top: 0; left: 22%; right: 22%; height: 3px; border-radius: 0 0 4px 4px; background: #FDC500;
+        }
+        .mobile-bottom-nav button i { font-size: 1.15rem !important; }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+        }
     </style>
 </head>
 <body class="bg-agesci-lightgray text-agesci-dark antialiased overflow-hidden">
 
+<a href="#contenuto" class="skip-link">Vai al contenuto</a>
 <div id="app" v-cloak class="h-screen flex flex-col">
+    <div class="sr-only-live" aria-live="polite" role="status">{{ annuncioPagina }}</div>
     
     <!-- HEADER ISTITUZIONALE -->
-    <nav class="bg-agesci-dark text-white shadow-md z-50 shrink-0 border-b border-agesci-purple">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-            
-            <div class="font-bold text-lg md:text-xl flex items-center gap-3 cursor-pointer" @click="currentModule = 'home'">
+    <header class="bg-agesci-dark text-white shadow-md z-50 shrink-0 border-b border-agesci-purple" style="padding-top: env(safe-area-inset-top, 0px)">
+        <div class="px-2 sm:px-4 h-16 flex justify-between items-center gap-2">
+            <div class="flex items-center gap-1 sm:gap-2 min-w-0">
+            <button type="button" class="menu-toggle" @click="toggleMenu" :aria-expanded="menuAperto || (!menuCompatto && isDesktop) ? 'true' : 'false'" aria-controls="menu-laterale" :aria-label="isDesktop ? (menuCompatto ? 'Espandi il menu' : 'Riduci il menu') : 'Apri il menu'">
+                <i class="fa-solid fa-bars" aria-hidden="true"></i>
+            </button>
+            <a href="#/home" class="font-bold text-lg md:text-xl flex items-center gap-3 cursor-pointer rounded-xl pr-2" @click.prevent="vaiA('home')" aria-label="Agesci Marche, torna alla Home">
                 <div class="w-9 h-9 rounded-xl overflow-hidden bg-white p-1 flex items-center justify-center shadow">
                     <img src="assets/logo.png" onerror="this.onerror=null; this.src='https://placehold.co/32x32?text=Scout';" class="w-full h-full object-contain">
                 </div>
                 <div class="flex flex-col">
                     <span class="tracking-tight leading-none">Agesci Marche</span>
-                    <span class="text-[10px] text-agesci-lavender font-normal tracking-widest uppercase">App</span>
+                    <span class="text-[10px] text-agesci-lavender font-normal tracking-widest uppercase">{{ titoloPaginaCorrente }}</span>
                 </div>
+            </a>
             </div>
-            
-            <div class="hidden lg:flex space-x-1 items-center font-medium text-sm">
+
+            <!-- La navigazione principale ora vive nel menu laterale (sempre visibile su desktop) -->
+            <div class="hidden space-x-1 items-center font-medium text-sm" aria-hidden="true">
                 <button @click="currentModule = 'home'" :class="{'bg-agesci-purple text-white shadow': currentModule === 'home', 'text-gray-300 hover:bg-agesci-purple/40': currentModule !== 'home'}" class="px-3 py-2 rounded-xl transition flex items-center gap-2">
                     <i class="fa-solid fa-house"></i> Home
                 </button>
@@ -128,7 +331,7 @@
 
             <div class="flex items-center text-sm border-l border-white/10 pl-4 ml-2">
                 <template v-if="currentUser">
-                    <button @click="apriPannelloNotifiche" class="relative w-9 h-9 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition mr-2 shrink-0">
+                    <button @click="apriPannelloNotifiche" :aria-label="notificheNonLette > 0 ? ('Notifiche, ' + notificheNonLette + ' non lette') : 'Notifiche'" class="relative w-11 h-11 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition mr-1 shrink-0">
                         <i class="fa-solid fa-bell"></i>
                         <span v-if="notificheNonLette > 0" class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1">{{ notificheNonLette }}</span>
                     </button>
@@ -138,9 +341,9 @@
                         <span v-else-if="userProfile?.isAdmin" class="text-[9px] text-agesci-yellow font-bold uppercase">Admin Area</span>
                         <span class="text-[10px] text-agesci-lavender underline text-right">Profilo & App</span>
                     </div>
-                    <div class="bg-agesci-lavender text-agesci-dark w-9 h-9 rounded-full flex items-center justify-center shadow cursor-pointer font-bold hover:scale-105 transition relative" @click="showProfileModal = true">
+                    <button type="button" aria-label="Apri profilo e impostazioni app" class="bg-agesci-lavender text-agesci-dark w-10 h-10 rounded-full flex items-center justify-center shadow cursor-pointer font-bold hover:scale-105 transition relative" @click="showProfileModal = true">
                         {{ (myDisplayName || '?').charAt(0).toUpperCase() }}
-                    </div>
+                    </button>
                 </template>
                 <template v-else>
                     <button @click="showAuthModal = true" class="bg-agesci-yellow text-agesci-dark font-bold px-3 py-2 rounded-xl shadow hover:bg-yellow-400 transition flex items-center gap-2 text-xs">
@@ -149,10 +352,79 @@
                 </template>
             </div>
         </div>
+    </header>
+
+    <!-- MENU LATERALE (a scomparsa su mobile, fisso e riducibile su desktop) -->
+    <div class="flex flex-grow min-h-0 relative">
+    <div v-if="menuAperto && !isDesktop" class="side-backdrop" @click="chiudiMenu" aria-hidden="true"></div>
+    <nav id="menu-laterale" class="side-menu" :class="{ 'is-open': menuAperto, 'is-compact': menuCompatto && isDesktop }" aria-label="Menu principale" :aria-hidden="!isDesktop && !menuAperto ? 'true' : null" :inert="!isDesktop && !menuAperto ? true : null" @keydown.esc="chiudiMenu">
+        <div class="side-head">
+            <span class="font-bold text-lg">Menu</span>
+            <button type="button" class="menu-toggle" @click="chiudiMenu" aria-label="Chiudi il menu"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+        </div>
+        <div class="side-scroll">
+            <div class="side-label">Sezioni</div>
+            <ul class="space-y-1">
+                <li v-for="pg in pagineMenu" :key="pg.key">
+                    <a :href="'#/' + slugPagina(pg.key)" class="side-link" :aria-current="currentModule === pg.key ? 'page' : null" :title="menuCompatto && isDesktop ? pg.label : null" @click.prevent="vaiA(pg.key)">
+                        <span class="side-ico"><i class="fa-solid" :class="pg.icon" aria-hidden="true"></i></span>
+                        <span class="side-txt"><span>{{ pg.label }}</span><span class="side-desc">{{ pg.desc }}</span></span>
+                        <span v-if="pg.badge" class="side-badge" :aria-label="pg.badge + ' in attesa'">{{ pg.badge }}</span>
+                    </a>
+                    <!-- Collegamenti rapidi interni alla sezione aperta -->
+                    <ul v-if="currentModule === pg.key && sottoLinkCorrenti.length" class="side-subgroup mt-1 mb-2 ml-3 pl-2 border-l border-white/15 space-y-0.5" :aria-label="'In ' + pg.label">
+                        <li v-for="sl in sottoLinkCorrenti" :key="sl.id">
+                            <button type="button" class="side-sub" :aria-current="sl.attivo ? 'true' : null" @click="eseguiSottoLink(sl)">
+                                <i class="fa-solid" :class="sl.icon" aria-hidden="true"></i><span>{{ sl.label }}</span>
+                            </button>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+
+            <div class="side-label">Account</div>
+            <ul class="space-y-1">
+                <li v-if="currentUser">
+                    <button type="button" class="side-link" @click="chiudiMenu(); apriPannelloNotifiche();" :title="menuCompatto && isDesktop ? 'Notifiche' : null">
+                        <span class="side-ico"><i class="fa-solid fa-bell" aria-hidden="true"></i></span>
+                        <span class="side-txt"><span>Notifiche</span></span>
+                        <span v-if="notificheNonLette > 0" class="side-badge">{{ notificheNonLette }}</span>
+                    </button>
+                </li>
+                <li v-if="currentUser">
+                    <button type="button" class="side-link" @click="chiudiMenu(); showProfileModal = true;" :title="menuCompatto && isDesktop ? 'Profilo e app' : null">
+                        <span class="side-ico"><i class="fa-solid fa-user" aria-hidden="true"></i></span>
+                        <span class="side-txt"><span>Profilo & App</span><span class="side-desc">{{ myDisplayName }}</span></span>
+                    </button>
+                </li>
+                <li v-else>
+                    <button type="button" class="side-link" @click="chiudiMenu(); showAuthModal = true;" :title="menuCompatto && isDesktop ? 'Accedi' : null">
+                        <span class="side-ico"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i></span>
+                        <span class="side-txt"><span>Accedi</span><span class="side-desc">Entra con il tuo codice socio</span></span>
+                    </button>
+                </li>
+            </ul>
+
+            <div class="side-label" id="etichetta-testo">Dimensione del testo</div>
+            <div class="side-size" role="group" aria-labelledby="etichetta-testo">
+                <button type="button" :aria-pressed="dimensioneTesto === 'normale' ? 'true' : 'false'" @click="impostaDimensioneTesto('normale')" aria-label="Testo normale" style="font-size:.95rem">A</button>
+                <button type="button" :aria-pressed="dimensioneTesto === 'grande' ? 'true' : 'false'" @click="impostaDimensioneTesto('grande')" aria-label="Testo grande" style="font-size:1.15rem">A</button>
+                <button type="button" :aria-pressed="dimensioneTesto === 'molto-grande' ? 'true' : 'false'" @click="impostaDimensioneTesto('molto-grande')" aria-label="Testo molto grande" style="font-size:1.4rem">A</button>
+            </div>
+            <p class="side-hide-compact lg:hidden text-sm text-agesci-lavender px-3 pt-5 leading-snug">
+                <i class="fa-solid fa-hand-pointer mr-1" aria-hidden="true"></i> Scorri il dito a destra o a sinistra sulla pagina per passare alla sezione vicina.
+            </p>
+        </div>
+        <div class="side-foot hidden lg:block">
+            <button type="button" class="side-link" @click="toggleMenu" :aria-label="menuCompatto ? 'Espandi il menu' : 'Riduci il menu'" :title="menuCompatto ? 'Espandi il menu' : 'Riduci il menu'">
+                <span class="side-ico"><i class="fa-solid" :class="menuCompatto ? 'fa-angles-right' : 'fa-angles-left'" aria-hidden="true"></i></span>
+                <span class="side-txt"><span>Riduci menu</span></span>
+            </button>
+        </div>
     </nav>
 
     <!-- MAIN CONTAINER -->
-    <main class="flex-grow relative overflow-hidden pb-16 lg:pb-0">
+    <main id="contenuto" tabindex="-1" class="flex-grow min-w-0 relative overflow-hidden pb-16 lg:pb-0" @touchstart.passive="onSwipeStart" @touchend.passive="onSwipeEnd" @touchcancel.passive="swipe = null">
 
         <!-- MODULO 0: HOME -->
         <div v-show="currentModule === 'home'" class="app-module absolute inset-0 overflow-y-auto bg-gray-50 p-4 md:p-8">
@@ -197,25 +469,25 @@
 
                 <!-- GRIGLIA CON LE AREE -->
                 <div class="grid gap-4" :class="homeModuleCount === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'">
-                    <button v-if="canAccessModule('territorio')" @click="currentModule = 'territorio'" class="bg-white border rounded-2xl p-5 md:p-6 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 transition space-y-2">
+                    <button v-if="canAccessModule('territorio')" @click="vaiA('territorio')" class="bg-white border rounded-2xl p-5 md:p-6 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 transition space-y-2">
                         <i class="fa-solid fa-tent text-2xl md:text-3xl text-agesci-purple"></i>
                         <h3 class="font-bold text-sm md:text-base text-agesci-dark">Campi e sentieri</h3>
                         <p v-if="etichettaVisibilita('territorio')" class="text-[10px] font-bold text-amber-600"><i class="fa-solid fa-eye-slash mr-1"></i>{{ etichettaVisibilita('territorio') }}</p>
                         <p class="text-[11px] md:text-xs text-gray-500">Mappa per trovare strutture, cammini e sedi scout.</p>
                     </button>
-                    <button v-if="canAccessModule('attivita')" @click="currentModule = 'attivita'" class="bg-white border rounded-2xl p-5 md:p-6 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 transition space-y-2">
+                    <button v-if="canAccessModule('attivita')" @click="vaiA('attivita')" class="bg-white border rounded-2xl p-5 md:p-6 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 transition space-y-2">
                         <i class="fa-solid fa-compass text-2xl md:text-3xl text-agesci-purple"></i>
                         <h3 class="font-bold text-sm md:text-base text-agesci-dark">Attività & Settori</h3>
                         <p v-if="etichettaVisibilita('attivita')" class="text-[10px] font-bold text-amber-600"><i class="fa-solid fa-eye-slash mr-1"></i>{{ etichettaVisibilita('attivita') }}</p>
                         <p class="text-[11px] md:text-xs text-gray-500">Proposte di attività, con possibilità di prenotazione.</p>
                     </button>
-                    <button v-if="canAccessModule('eventi')" @click="currentModule = 'eventi'" class="bg-white border rounded-2xl p-5 md:p-6 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 transition space-y-2">
+                    <button v-if="canAccessModule('eventi')" @click="vaiA('eventi')" class="bg-white border rounded-2xl p-5 md:p-6 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 transition space-y-2">
                         <i class="fa-solid fa-calendar-days text-2xl md:text-3xl text-agesci-purple"></i>
                         <h3 class="font-bold text-sm md:text-base text-agesci-dark">Calendario</h3>
                         <p v-if="etichettaVisibilita('eventi')" class="text-[10px] font-bold text-amber-600"><i class="fa-solid fa-eye-slash mr-1"></i>{{ etichettaVisibilita('eventi') }}</p>
                         <p class="text-[11px] md:text-xs text-gray-500">Eventi regionali, di zona e di gruppo con promemoria e import nel calendario personale.</p>
                     </button>
-                    <button v-if="canAccessModule('bilanci')" @click="currentModule = 'bilanci'" class="bg-white border rounded-2xl p-5 md:p-6 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 transition space-y-2">
+                    <button v-if="canAccessModule('bilanci')" @click="vaiA('bilanci')" class="bg-white border rounded-2xl p-5 md:p-6 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 transition space-y-2">
                         <i class="fa-solid fa-wallet text-2xl md:text-3xl text-agesci-purple"></i>
                         <h3 class="font-bold text-sm md:text-base text-agesci-dark">Bilanci Eventi</h3>
                         <p v-if="etichettaVisibilita('bilanci')" class="text-[10px] font-bold text-amber-600"><i class="fa-solid fa-eye-slash mr-1"></i>{{ etichettaVisibilita('bilanci') }}</p>
@@ -224,7 +496,7 @@
                 </div>
 
                 <div v-if="isAdminOrSuper">
-                    <button @click="currentModule = 'admin'" class="w-full bg-agesci-yellow/10 border border-agesci-yellow rounded-2xl p-4 text-left shadow-sm hover:shadow transition flex items-center justify-between">
+                    <button @click="vaiA('admin')" class="w-full bg-agesci-yellow/10 border border-agesci-yellow rounded-2xl p-4 text-left shadow-sm hover:shadow transition flex items-center justify-between">
                         <div class="flex items-center gap-3">
                             <i class="fa-solid fa-shield-halved text-2xl text-agesci-dark"></i>
                             <div>
@@ -240,6 +512,18 @@
                     <button @click="showAuthModal = true" class="bg-agesci-dark text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow">Accedi o Registrati</button>
                 </div>
 
+                            <!-- Pagina precedente / successiva -->
+                <nav class="page-pager" aria-label="Scorri tra le sezioni" v-if="paginaPrecedente || paginaSuccessiva">
+                    <button v-if="paginaPrecedente" type="button" @click="vaiA(paginaPrecedente.key, -1)">
+                        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                        <span><small>Precedente</small>{{ paginaPrecedente.label }}</span>
+                    </button>
+                    <span v-else class="flex-1"></span>
+                    <button v-if="paginaSuccessiva" type="button" class="next" @click="vaiA(paginaSuccessiva.key, 1)">
+                        <span><small>Successiva</small>{{ paginaSuccessiva.label }}</span>
+                        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                    </button>
+                </nav>
             </div>
         </div>
 
@@ -2323,27 +2607,33 @@
         </div>
 
     </main>
+    </div>
 
     <!-- MOBILE NAVIGATION FOOTER -->
-    <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-agesci-dark border-t border-agesci-purple z-[60] flex justify-around items-stretch text-white mobile-bottom-nav">
-        <button @click="currentModule = 'home'" :class="{'text-agesci-yellow font-bold': currentModule === 'home', 'text-gray-400': currentModule !== 'home'}" class="flex flex-col items-center justify-center w-full h-full">
+    <nav aria-label="Sezioni" class="lg:hidden fixed bottom-0 left-0 right-0 bg-agesci-dark border-t border-agesci-purple z-[60] flex justify-around items-stretch text-white mobile-bottom-nav">
+        <button @click="vaiA('home')" :aria-current="currentModule === 'home' ? 'page' : null" :class="{'text-agesci-yellow font-bold': currentModule === 'home', 'text-gray-300': currentModule !== 'home'}" class="flex flex-col items-center justify-center w-full h-full">
             <i class="fa-solid fa-house text-base mb-0.5"></i><span class="text-[9px] uppercase">Home</span>
         </button>
-        <button v-if="canAccessModule('territorio')" @click="currentModule = 'territorio'" :class="{'text-agesci-yellow font-bold': currentModule === 'territorio', 'text-gray-400': currentModule !== 'territorio'}" class="flex flex-col items-center justify-center w-full h-full">
-            <i class="fa-solid fa-tent text-base mb-0.5"></i><span class="text-[9px] uppercase">Luoghi</span>
+        <button v-if="canAccessModule('territorio')" @click="vaiA('territorio')" :aria-current="currentModule === 'territorio' ? 'page' : null" :class="{'text-agesci-yellow font-bold': currentModule === 'territorio', 'text-gray-300': currentModule !== 'territorio'}" class="flex flex-col items-center justify-center w-full h-full">
+            <i class="fa-solid fa-tent text-base mb-0.5"></i><span class="text-[9px] uppercase">Campi</span>
         </button>
-        <button v-if="canAccessModule('attivita')" @click="currentModule = 'attivita'" :class="{'text-agesci-yellow font-bold': currentModule === 'attivita', 'text-gray-400': currentModule !== 'attivita'}" class="flex flex-col items-center justify-center w-full h-full">
+        <button v-if="canAccessModule('attivita')" @click="vaiA('attivita')" :aria-current="currentModule === 'attivita' ? 'page' : null" :class="{'text-agesci-yellow font-bold': currentModule === 'attivita', 'text-gray-300': currentModule !== 'attivita'}" class="flex flex-col items-center justify-center w-full h-full">
             <i class="fa-solid fa-compass text-base mb-0.5"></i><span class="text-[9px] uppercase">Attività</span>
         </button>
-        <button v-if="canAccessModule('eventi')" @click="currentModule = 'eventi'" :class="{'text-agesci-yellow font-bold': currentModule === 'eventi', 'text-gray-400': currentModule !== 'eventi'}" class="flex flex-col items-center justify-center w-full h-full">
+        <button v-if="canAccessModule('eventi')" @click="vaiA('eventi')" :aria-current="currentModule === 'eventi' ? 'page' : null" :class="{'text-agesci-yellow font-bold': currentModule === 'eventi', 'text-gray-300': currentModule !== 'eventi'}" class="flex flex-col items-center justify-center w-full h-full">
             <i class="fa-solid fa-calendar-days text-base mb-0.5"></i><span class="text-[9px] uppercase">Calendario</span>
         </button>
-        <button v-if="canAccessModule('bilanci')" @click="currentModule = 'bilanci'" :class="{'text-agesci-yellow font-bold': currentModule === 'bilanci', 'text-gray-400': currentModule !== 'bilanci'}" class="flex flex-col items-center justify-center w-full h-full">
+        <button v-if="canAccessModule('bilanci')" @click="vaiA('bilanci')" :aria-current="currentModule === 'bilanci' ? 'page' : null" :class="{'text-agesci-yellow font-bold': currentModule === 'bilanci', 'text-gray-300': currentModule !== 'bilanci'}" class="flex flex-col items-center justify-center w-full h-full">
             <i class="fa-solid fa-wallet text-base mb-0.5"></i><span class="text-[9px] uppercase">Bilanci</span>
         </button>
-        <button v-if="isAdminOrSuper" @click="currentModule = 'admin'" :class="{'text-agesci-yellow font-bold': currentModule === 'admin', 'text-gray-400': currentModule !== 'admin'}" class="flex flex-col items-center justify-center w-full h-full relative">
+        <button v-if="isAdminOrSuper" @click="vaiA('admin')" :aria-current="currentModule === 'admin' ? 'page' : null" :class="{'text-agesci-yellow font-bold': currentModule === 'admin', 'text-gray-300': currentModule !== 'admin'}" class="flex flex-col items-center justify-center w-full h-full relative">
             <i class="fa-solid fa-shield-halved text-base mb-0.5"></i><span class="text-[9px] uppercase">Admin</span>
         </button>
+    </nav>
+
+    <div v-if="mostraSuggerimentoSwipe" class="swipe-hint lg:hidden" role="status">
+        <i class="fa-solid fa-arrows-left-right" aria-hidden="true"></i> Scorri a destra o a sinistra per cambiare sezione
+        <button type="button" @click="nascondiSuggerimentoSwipe" class="ml-1 w-8 h-8 rounded-full bg-white/15 flex items-center justify-center" aria-label="Chiudi suggerimento"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
     </div>
 
     <!-- ANTEPRIMA FOTO A TUTTO SCHERMO -->
@@ -2994,6 +3284,15 @@
         data() {
             return {
                 currentModule: 'home',
+                // Accessibilità / navigazione
+                menuAperto: false,
+                menuCompatto: (() => { try { return localStorage.getItem('a11y_menu_compatto') === '1'; } catch (e) { return false; } })(),
+                isDesktop: window.matchMedia('(min-width: 1024px)').matches,
+                dimensioneTesto: (() => { try { return localStorage.getItem('a11y_dimensione_testo') || 'normale'; } catch (e) { return 'normale'; } })(),
+                direzionePagina: 0,
+                annuncioPagina: '',
+                swipe: null,
+                mostraSuggerimentoSwipe: false,
                 // Impostazioni globali (collection settings, documento "app")
                 impostazioni: JSON.parse(JSON.stringify(IMPOSTAZIONI_DEFAULT)),
                 impostazioniRemote: null,
@@ -3191,6 +3490,66 @@
             },
             modulesAccessKey() {
                 return MODULI_ELENCO.map(m => this.canAccessModule(m.key) ? '1' : '0').join('');
+            },
+            // Ordine delle sezioni usato da menu laterale, scorrimento e pulsanti precedente/successiva
+            pagineMenu() {
+                const out = [{ key: 'home', label: 'Home', icon: 'fa-house', desc: 'Notizie e accesso rapido' }];
+                MODULI_ELENCO.forEach(m => {
+                    if (this.canAccessModule(m.key)) out.push({ key: m.key, label: m.key === 'territorio' ? 'Campi e sentieri' : m.label, icon: m.icon, desc: m.desc });
+                });
+                if (this.isAdminOrSuper) {
+                    const n = this.isSuperAdmin ? (this.pendingPlaces.length + this.pendingUpdates.length) : 0;
+                    out.push({ key: 'admin', label: 'Amministrazione', icon: 'fa-shield-halved', desc: 'Impostazioni, utenti e approvazioni', badge: n || 0 });
+                }
+                return out;
+            },
+            indicePagina() {
+                return this.pagineMenu.findIndex(p => p.key === this.currentModule);
+            },
+            paginaPrecedente() {
+                return this.indicePagina > 0 ? this.pagineMenu[this.indicePagina - 1] : null;
+            },
+            paginaSuccessiva() {
+                const i = this.indicePagina;
+                return i >= 0 && i < this.pagineMenu.length - 1 ? this.pagineMenu[i + 1] : null;
+            },
+            titoloPaginaCorrente() {
+                const p = this.pagineMenu.find(x => x.key === this.currentModule);
+                return p ? p.label : 'App';
+            },
+            // Collegamenti rapidi "dentro" la sezione aperta, mostrati nel menu laterale
+            sottoLinkCorrenti() {
+                switch (this.currentModule) {
+                    case 'territorio':
+                        if (!this.canSeeTerritorio) return [];
+                        return [
+                            { id: 't-map', label: 'Mappa', icon: 'fa-map', attivo: this.territorioSubView === 'map', run: () => { this.territorioSubView = 'map'; } },
+                            { id: 't-list', label: 'Elenco luoghi', icon: 'fa-list', attivo: this.territorioSubView === 'list', run: () => { this.territorioSubView = 'list'; } },
+                            { id: 't-add', label: 'Aggiungi un punto', icon: 'fa-plus', attivo: this.territorioSubView === 'add', run: () => this.openAddPlace() }
+                        ];
+                    case 'attivita':
+                        return [
+                            { id: 'a-doc', label: 'Documenti', icon: 'fa-folder-open', attivo: this.attivitaTab === 'documenti', run: () => { this.attivitaTab = 'documenti'; } },
+                            { id: 'a-pren', label: 'Prenotazioni', icon: 'fa-calendar-check', attivo: this.attivitaTab === 'prenotazioni', run: () => { this.attivitaTab = 'prenotazioni'; } },
+                            { id: 'a-mie', label: 'Le mie prenotazioni', icon: 'fa-bookmark', attivo: this.attivitaTab === 'mie_prenotazioni', run: () => { this.attivitaTab = 'mie_prenotazioni'; this.loadMyBookings(); } }
+                        ];
+                    case 'eventi': {
+                        const l = [
+                            { id: 'e-g', label: 'Vista giorno', icon: 'fa-calendar-day', attivo: this.calendarioSubView === 'giorno', run: () => this.calendarioImpostaVista('giorno') },
+                            { id: 'e-s', label: 'Vista settimana', icon: 'fa-calendar-week', attivo: this.calendarioSubView === 'settimana', run: () => this.calendarioImpostaVista('settimana') },
+                            { id: 'e-m', label: 'Vista mese', icon: 'fa-calendar', attivo: this.calendarioSubView === 'mese', run: () => this.calendarioImpostaVista('mese') }
+                        ];
+                        if (this.currentUser) l.push({ id: 'e-new', label: 'Nuovo evento', icon: 'fa-plus', run: () => this.openNewCalendarEvent() });
+                        return l;
+                    }
+                    case 'bilanci':
+                        return [
+                            { id: 'b-new', label: 'Nuovo bilancio evento', icon: 'fa-plus', run: () => this.openNewBudgetModalForCreate() },
+                            { id: 'b-rimb', label: 'Richiesta rimborso spese', icon: 'fa-file-invoice', run: () => this.openNewRimborsoModal() }
+                        ];
+                    default:
+                        return [];
+                }
             },
             homeModuleCount() {
                 return (this.modulesAccessKey.match(/1/g) || []).length;
@@ -3501,7 +3860,29 @@
                 const m = this.currentModule;
                 if (MODULI_ELENCO.some(x => x.key === m) && !this.canAccessModule(m)) this.currentModule = 'home';
             },
-            currentModule(newVal) {
+            currentModule(newVal, oldVal) {
+                // Animazione di scorrimento, link condivisibile (#/sezione), titolo e annuncio per lettori di schermo
+                let dir = this.direzionePagina;
+                if (!dir) {
+                    const ks = this.pagineMenu.map(p => p.key);
+                    dir = ks.indexOf(newVal) >= ks.indexOf(oldVal) ? 1 : -1;
+                }
+                this.direzionePagina = 0;
+                this.$nextTick(() => {
+                    const el = Array.from(document.querySelectorAll('#contenuto > .app-module')).find(x => x.style.display !== 'none');
+                    if (el) {
+                        el.classList.remove('anim-next', 'anim-prev');
+                        void el.offsetWidth;
+                        el.classList.add(dir > 0 ? 'anim-next' : 'anim-prev');
+                        el.addEventListener('animationend', () => el.classList.remove('anim-next', 'anim-prev'), { once: true });
+                    }
+                });
+                const hash = '#/' + this.slugPagina(newVal);
+                if (location.hash !== hash) {
+                    try { history.pushState({ modulo: newVal }, '', hash); } catch (e) { /* history non disponibile */ }
+                }
+                document.title = this.titoloPaginaCorrente + ' · Agesci Marche';
+                this.annuncioPagina = 'Sezione ' + this.titoloPaginaCorrente;
                 if(newVal === 'territorio' && this.canSeeTerritorio) {
                     this.$nextTick(() => { 
                         if(!this.mainMap) {
@@ -3562,6 +3943,31 @@
             }
         },
         mounted() {
+            // ---- Accessibilità e navigazione ----
+            this.applicaDimensioneTesto();
+            const mq = window.matchMedia('(min-width: 1024px)');
+            const aggiornaLayout = () => { this.isDesktop = mq.matches; if (mq.matches) this.menuAperto = false; };
+            if (mq.addEventListener) mq.addEventListener('change', aggiornaLayout); else mq.addListener(aggiornaLayout);
+            const daHash = () => {
+                const key = this.chiaveDaSlug((location.hash || '').replace(/^#\/?/, ''));
+                if (key && key !== this.currentModule) this.currentModule = key;
+            };
+            window.addEventListener('popstate', daHash);
+            window.addEventListener('hashchange', daHash);
+            daHash();
+            // Scorciatoie da tastiera: Alt + freccia sinistra/destra per cambiare sezione
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && this.menuAperto) { this.chiudiMenu(); return; }
+                if (!e.altKey || e.ctrlKey || e.metaKey) return;
+                if (e.key === 'ArrowRight' && this.paginaSuccessiva) { e.preventDefault(); this.vaiA(this.paginaSuccessiva.key, 1); }
+                if (e.key === 'ArrowLeft' && this.paginaPrecedente) { e.preventDefault(); this.vaiA(this.paginaPrecedente.key, -1); }
+            });
+            if (!mq.matches) {
+                let visto = false;
+                try { visto = localStorage.getItem('a11y_hint_swipe') === '1'; } catch (e) { visto = true; }
+                if (!visto) setTimeout(() => { this.mostraSuggerimentoSwipe = true; setTimeout(() => this.nascondiSuggerimentoSwipe(), 7000); }, 1500);
+            }
+
             window.openPlaceFromMap = (id) => {
                 const place = this.places.find(p => p.id === id);
                 if(place) this.openPlaceDetails(place);
@@ -3712,6 +4118,83 @@
             this.reminderTimer = setInterval(() => this.controllaPromemoriaEventi(), 60000);
         },
         methods: {
+            // ================= NAVIGAZIONE ACCESSIBILE =================
+            slugPagina(key) {
+                return ({ home: 'home', territorio: 'campi', attivita: 'attivita', eventi: 'calendario', bilanci: 'bilanci', admin: 'admin' })[key] || key;
+            },
+            chiaveDaSlug(slug) {
+                const m = { '': 'home', home: 'home', campi: 'territorio', luoghi: 'territorio', territorio: 'territorio', attivita: 'attivita', calendario: 'eventi', eventi: 'eventi', bilanci: 'bilanci', admin: 'admin' };
+                return m[(slug || '').toLowerCase()] || null;
+            },
+            vaiA(key, dir = 0) {
+                this.direzionePagina = dir;
+                this.currentModule = key;
+                this.chiudiMenu();
+            },
+            toggleMenu() {
+                if (this.isDesktop) {
+                    this.menuCompatto = !this.menuCompatto;
+                    try { localStorage.setItem('a11y_menu_compatto', this.menuCompatto ? '1' : '0'); } catch (e) { /* storage non disponibile */ }
+                    // la mappa deve ricalcolare la propria larghezza dopo l'animazione
+                    setTimeout(() => { if (this.mainMap) this.mainMap.invalidateSize(); window.dispatchEvent(new Event('resize')); }, 260);
+                } else {
+                    this.menuAperto = !this.menuAperto;
+                    if (this.menuAperto) this.$nextTick(() => { const f = document.querySelector('#menu-laterale .side-link[aria-current="page"]') || document.querySelector('#menu-laterale .side-link'); if (f) f.focus({ preventScroll: true }); });
+                }
+            },
+            chiudiMenu() {
+                if (!this.menuAperto) return;
+                this.menuAperto = false;
+                this.$nextTick(() => { const b = document.querySelector('header .menu-toggle'); if (b && !this.isDesktop) b.focus({ preventScroll: true }); });
+            },
+            eseguiSottoLink(sl) {
+                this.chiudiMenu();
+                sl.run();
+            },
+            impostaDimensioneTesto(v) {
+                this.dimensioneTesto = v;
+                try { localStorage.setItem('a11y_dimensione_testo', v); } catch (e) { /* storage non disponibile */ }
+                this.applicaDimensioneTesto();
+                setTimeout(() => { if (this.mainMap) this.mainMap.invalidateSize(); }, 50);
+            },
+            applicaDimensioneTesto() {
+                if (this.dimensioneTesto === 'normale') document.documentElement.removeAttribute('data-testo');
+                else document.documentElement.setAttribute('data-testo', this.dimensioneTesto);
+            },
+            nascondiSuggerimentoSwipe() {
+                this.mostraSuggerimentoSwipe = false;
+                try { localStorage.setItem('a11y_hint_swipe', '1'); } catch (e) { /* storage non disponibile */ }
+            },
+            // Scorrimento orizzontale tra le sezioni (solo touch). Ignorato su mappe, campi,
+            // finestre modali e aree che scorrono già in orizzontale (tabelle, schede).
+            onSwipeStart(e) {
+                if (this.isDesktop || !e.touches || e.touches.length !== 1) { this.swipe = null; return; }
+                const t = e.target;
+                if (t.closest && t.closest('.leaflet-container, input, textarea, select, [contenteditable], .fixed, [data-no-swipe]')) { this.swipe = null; return; }
+                let el = t;
+                while (el && el !== e.currentTarget) {
+                    if (el.scrollWidth > el.clientWidth + 4) {
+                        const ox = getComputedStyle(el).overflowX;
+                        if (ox === 'auto' || ox === 'scroll') { this.swipe = null; return; }
+                    }
+                    el = el.parentElement;
+                }
+                const p = e.touches[0];
+                this.swipe = { x: p.clientX, y: p.clientY, t: Date.now() };
+            },
+            onSwipeEnd(e) {
+                const s = this.swipe;
+                this.swipe = null;
+                if (!s || !e.changedTouches || !e.changedTouches.length) return;
+                const p = e.changedTouches[0];
+                const dx = p.clientX - s.x, dy = p.clientY - s.y;
+                if (Date.now() - s.t > 700 || Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.6) return;
+                // dal bordo sinistro: apre il menu
+                if (dx > 0 && s.x < 28) { this.menuAperto = true; return; }
+                if (dx < 0 && this.paginaSuccessiva) this.vaiA(this.paginaSuccessiva.key, 1);
+                else if (dx > 0 && this.paginaPrecedente) this.vaiA(this.paginaPrecedente.key, -1);
+                if (this.mostraSuggerimentoSwipe) this.nascondiSuggerimentoSwipe();
+            },
             // La sezione e' attiva per questo tipo di utente? tipo = 'ospiti' (senza accesso) o 'utenti' (con accesso)
             moduloAttivoPer(moduleName, tipo) {
                 const m = this.impostazioni && this.impostazioni.moduliAttivi && this.impostazioni.moduliAttivi[moduleName];
